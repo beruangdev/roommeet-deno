@@ -47,9 +47,7 @@ const Home: FC = () => {
       <Helmet>
         <title>Login - Deno Lite Meet</title>
       </Helmet>
-      <Helmet body>
-        <script src={"/assets/home.js"}></script>
-      </Helmet>
+  
       <div id="home">
         <div
           style={{
@@ -59,7 +57,7 @@ const Home: FC = () => {
           }}
         >
           <img
-            src="https://deno.land/images/artwork/glitchy-deno.jpg"
+            src="https://st2.zoom.us/static/6.3.14970/image/new/topNav/Zoom_logo.svg"
             alt="deno"
             width="150"
           />
@@ -94,6 +92,8 @@ const Home: FC = () => {
           </div>
         </div>
       </div>
+
+        <script src={"/assets/home.js"}></script>
     </Base>
   );
 };

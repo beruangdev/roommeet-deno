@@ -6,12 +6,7 @@ const Meet: FC<{ isDev: boolean; }> = ({ isDev }) => {
     <Base>
       <Helmet>
         <title>Meet - Deno Lite Meet</title>
-        <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js">
-        </script>
-      </Helmet>
-      <Helmet body>
-        {isDev && <script>{`window.__DEV__ = true`}</script>}
-        <script src={"/assets/meet.js"}></script>
+  
       </Helmet>
       <div id="meet">
         <div class="row" id="videos">
@@ -63,6 +58,11 @@ const Meet: FC<{ isDev: boolean; }> = ({ isDev }) => {
           </form>
         </div>
       </div>
+
+      <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js">
+        </script>
+        {isDev && <script>{`window.__DEV__ = true`}</script>}
+        <script src={"/assets/meet.js"}></script>
     </Base>
   );
 };
