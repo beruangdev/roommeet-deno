@@ -1,5 +1,3 @@
-
-
 const $ = (v) => document.querySelector(v);
 const search = window.location.search;
 let inviteroom;
@@ -23,8 +21,10 @@ if (token) {
     fetch("./api/join-or-create", {
       method: "POST",
       body: JSON.stringify({
-        id: $("#username").value,
         room: $("#room").value,
+        id: $("#email").value,
+        username: $("#username").value,
+        password: $("#password").value,
       }),
     })
       .then((data) => {

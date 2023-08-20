@@ -61,6 +61,7 @@ const Meet: FC<{ isDev: boolean; }> = ({ isDev }) => {
         </div>
       </div>
 
+      <script src={"/assets/stunServers.js"} defer></script>
       <script src={"/assets/meet.js"} defer></script>
     </Base>
   );

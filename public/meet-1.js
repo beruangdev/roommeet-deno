@@ -1,5 +1,3 @@
-// import { iceServers } from "./stunServers.js";
-
 const fork = window;
 const meetElement = document.getElementById("meet");
 const chatInput = document.getElementById("chatInput");
@@ -29,7 +27,6 @@ fork.closeChat = () => {
 
 let ws;
 let localStream = null;
-let videoEnabled = true;
 
 const peers = {};
 
@@ -80,17 +77,13 @@ function init(token, stream) {
       localStream = stream;
       info = data;
       document.getElementById("settings").style.display = "inline-block";
-      document.getElementById("me").innerHTML = `Me: ${info.username}`;
+      document.getElementById("me").innerHTML = `Me: ${info.id}`;
     } else if (type === "initSend") addPeer(data.id, true);
     else if (type === "removePeer") removePeer(data.id);
     else if (type === "signal") peers[data.id].signal(data.signal);
     else if (type === "full") alert("Room FULL");
     else if (type === "errorToken") fork.logout();
-    else if (type === "toggleVideo") {
-      console.log('data', data)
-      const opacity = data.videoEnabled ? 1 : 0
-      document.querySelector(`video[id="${data.id}"]`).style.opacity = opacity
-    } else if (type === "chat") {
+    else if (type === "chat") {
       chatMessage.innerHTML += `
         <div class="chat-message">
           <b>${data.id.split("@")[0]}: </b>${data.message}
@@ -120,7 +113,6 @@ function addPeer(id, am_initiator) {
     stream: localStream,
     config: configuration,
   });
-
   peers[id].on("signal", (data) => {
     ws.send(
       JSON.stringify({
@@ -257,47 +249,9 @@ fork.toggleVid = () => {
   for (const index in localStream.getVideoTracks()) {
     localStream.getVideoTracks()[index].enabled =
       !localStream.getVideoTracks()[index].enabled;
-    videoEnabled = localStream.getVideoTracks()[index].enabled; // Simpan status video saat tombol ditekan
-    vidButton.innerText = videoEnabled ? "Video Enabled" : "Video Disabled";
-
-    ws.send(
-      JSON.stringify({
-        type: "toggleVideo",
-        data: {
-          videoEnabled,
-        },
-      })
-    );
-
-    if (!videoEnabled) {
-      // Hentikan streaming gambar dari perangkat
-      localStream.getVideoTracks()[index].stop();
-      localVideo.srcObject = null;
-    } else {
-      // Mulai streaming gambar dari perangkat kembali
-      navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-        for (const id in peers) {
-          for (const index in peers[id].streams[0].getTracks()) {
-            for (const index2 in stream.getTracks()) {
-              if (
-                peers[id].streams[0].getTracks()[index].kind ===
-                stream.getTracks()[index2].kind
-              ) {
-                peers[id].replaceTrack(
-                  peers[id].streams[0].getTracks()[index],
-                  stream.getTracks()[index2],
-                  peers[id].streams[0]
-                );
-                break;
-              }
-            }
-          }
-        }
-        localStream = stream;
-        localVideo.srcObject = stream;
-        updateButtons();
-      });
-    }
+    vidButton.innerText = localStream.getVideoTracks()[index].enabled
+      ? "Video Enabled"
+      : "Video Disabled";
   }
 };
 

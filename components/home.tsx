@@ -29,11 +29,7 @@ const LinkBottom: FC<{
 }> = ({ href, children }) => {
   return (
     <>
-      <a
-        target="_blank"
-        style={{ color: "white", margin: 5 }}
-        href={href}
-      >
+      <a target="_blank" style={{ color: "white", margin: 5 }} href={href}>
         {children}
       </a>
       <span>~</span>
@@ -47,7 +43,7 @@ const Home: FC = () => {
       <Helmet>
         <title>Login - Deno Lite Meet</title>
       </Helmet>
-  
+
       <div id="home">
         <div
           style={{
@@ -73,14 +69,31 @@ const Home: FC = () => {
               id="room"
               placeholder="Room (no special char)"
               pattern="^[a-zA-Z0-9]+$"
+              value="123"
               required
             />
             <input
               class="my-input"
-              type="email"
-              id="username"
+              type="text"
+              id="email"
               placeholder="Email"
+              value="admin@local.com"
               required
+            />
+            <input
+              class="my-input"
+              type="text"
+              id="username"
+              placeholder="Name"
+              value="admin"
+              required
+            />
+            <input
+              class="my-input"
+              type="text"
+              id="password"
+              placeholder="Password"
+              value="123"
             />
             <input class="my-input" type="submit" value="Join / Create" />
           </form>
@@ -93,7 +106,7 @@ const Home: FC = () => {
         </div>
       </div>
 
-        <script src={"/assets/home.js"}></script>
+      <script src={"/assets/home.js"}></script>
     </Base>
   );
 };

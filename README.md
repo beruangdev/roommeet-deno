@@ -32,12 +32,12 @@ deno run --allow-net --allow-read server.ts
 
 open in http://localhost:8080
 
-## Demo
+<!-- ## Demo -->
 
-https://lite-meet.deno.dev/
+<!-- https://lite-meet.deno.dev/ -->
 
 ## Note
 
 It's fun project. PRs welcome :).
 
-[Deploy](https://dash.deno.com/new?url=https://raw.githubusercontent.com/herudi/deno-webrtc-video-meet/master/server.ts)
+<!-- [Deploy](https://dash.deno.com/new?url=https://raw.githubusercontent.com/herudi/deno-webrtc-video-meet/master/server.ts) -->
