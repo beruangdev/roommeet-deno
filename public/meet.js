@@ -42,23 +42,17 @@ const constraints = {
   audio: true,
   video: {
     width: {
-      max: 300,
+      max: 100,
     },
     height: {
-      max: 300,
+      max: 100,
     },
+    frameRate: { ideal: 24, max: 40 }
   },
 };
 
 updateVideoQuality()
 function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connection.downlink) {
-  // const constraints = {
-  //   video: {},
-  //   audio: true
-  // };
-
-  // downlinkMbps *= 1000; // Convert Mbps to kbps
-
   switch (context) {
     case '1:1':
       if (downlinkMbps >= 1.8) {
@@ -70,10 +64,23 @@ function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connectio
       } else if (downlinkMbps >= 0.6) {
         constraints.video.width.max = 640;
         constraints.video.height.max = 360;
-      } else {
-        // constraints.video = false; // Turn off video
-        constraints.video.width.max = 300;
-        constraints.video.height.max = 300;
+        
+      } 
+      else if (downlinkMbps >= 0.3) {
+        constraints.video.width.max = 320;
+        constraints.video.height.max = 180;
+      }
+      else if (downlinkMbps >= 0.15) {
+        constraints.video.width.max = 160;
+        constraints.video.height.max = 90;
+        constraints.video.frameRate.max = 20;
+        constraints.video.frameRate.ideal = 15;
+      }
+      else {
+        constraints.video.width.max = 100;
+        constraints.video.height.max = 100;
+        constraints.video.frameRate.max = 15;
+        constraints.video.frameRate.ideal = 10;
       }
       break;
 
@@ -88,7 +95,6 @@ function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connectio
         constraints.video.width.max = 640;
         constraints.video.height.max = 360;
       } else {
-        // constraints.video = false;
         constraints.video.width.max = 640;
         constraints.video.height.max = 360;
       }
@@ -108,7 +114,6 @@ function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connectio
         constraints.video.width.max = 320;
         constraints.video.height.max = 240;
       } else {
-        // constraints.video = false;
         constraints.video.width.max = 640;
         constraints.video.height.max = 360;
       }
@@ -132,7 +137,40 @@ function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connectio
 navigator.connection && navigator.connection.addEventListener('change', () => {
   console.log("navigator.connection change", navigator.connection.downlink)
   updateVideoQuality()
+  refreshStreamWithNewConstraints();
 });
+
+function refreshStreamWithNewConstraints() {
+  if (localStream) {
+    const tracks = localStream.getTracks();
+    tracks.forEach(function (track) {
+      track.stop();
+    });
+    localVideo.srcObject = null;
+  }
+  navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+    for (const user_id in peers) {
+      for (const index in peers[user_id].streams[0].getTracks()) {
+        for (const index2 in stream.getTracks()) {
+          if (
+            peers[user_id].streams[0].getTracks()[index].kind ===
+            stream.getTracks()[index2].kind
+          ) {
+            peers[user_id].replaceTrack(
+              peers[user_id].streams[0].getTracks()[index],
+              stream.getTracks()[index2],
+              peers[user_id].streams[0]
+            );
+            break;
+          }
+        }
+      }
+    }
+    localStream = stream;
+    localVideo.srcObject = stream;
+    updateButtons();
+  });
+}
 
 
 constraints.video.facingMode = {
