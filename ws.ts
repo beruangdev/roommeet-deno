@@ -54,18 +54,20 @@ const handler: Handler = ({ request, user }) => {
       return wsSend(socket, { type: "errorPassword", data: {} });
     }
 
-    if (peers[room] && Object.keys(peers[room]["participants"]).length >= MAX_USER) {
+    if (
+      peers[room] && Object.keys(peers[room]["participants"]).length >= MAX_USER
+    ) {
       return wsSend(socket, { type: "full", data: {} });
     }
 
     wsSend(socket, { type: "opening", data: { room, user_id } });
-    peers[room]["participants"][user_id] = {}
+    peers[room]["participants"][user_id] = {};
     peers[room]["participants"][user_id]["socket"] = socket;
 
     for (const _user_id in peers[room]["participants"]) {
       const peerSocket =
         peers[room]["participants"][_user_id]["socket"] as WebSocket;
-        if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
+      if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
         wsSend(peerSocket, { type: "initReceive", data: { user_id } });
       }
     }
@@ -99,7 +101,7 @@ const handler: Handler = ({ request, user }) => {
           if (
             _user_id !== user_id && peerSocket.readyState === WebSocket.OPEN
           ) {
-            peers[room]["chats"].push({ user_id, message: data.message })
+            peers[room]["chats"].push({ user_id, message: data.message });
             wsSend(peerSocket, {
               type: "chat",
               data: { user_id, message: data.message },
@@ -139,8 +141,7 @@ const handler: Handler = ({ request, user }) => {
   };
 
   socket.onclose = () => {
-   
-    if(peers[room]){
+    if (peers[room]) {
       for (const _user_id in peers[room]["participants"]) {
         const peerSocket =
           peers[room]["participants"][_user_id]["socket"] as WebSocket;
@@ -154,7 +155,11 @@ const handler: Handler = ({ request, user }) => {
         }
       }
 
-      if (!Object.keys(peers[room]["participants"] ?? {}).includes(peers[room].creator)) {
+      if (
+        !Object.keys(peers[room]["participants"] ?? {}).includes(
+          peers[room].creator,
+        )
+      ) {
         // for (const _user_id in peers[room]["participants"]) {
         //   const peerSocket =
         //     peers[room]["participants"][_user_id]["socket"] as WebSocket;
@@ -164,7 +169,7 @@ const handler: Handler = ({ request, user }) => {
         //   });
         // }
         // delete peers[room];
-      }else if (Object.keys(peers[room]["participants"]).length === 0) {
+      } else if (Object.keys(peers[room]["participants"]).length === 0) {
         delete peers[room];
       }
     }
@@ -177,31 +182,31 @@ export const wsLogin: Handler = ({ body }) => {
   const { user_id, room, password } = body;
 
   if (peers[room]) {
-    if(peers[room]["participants"][user_id]){
+    if (peers[room]["participants"][user_id]) {
       throw new HttpError(400, "User " + user_id + " already exist");
+    } else {
+      delete peers[room]["participants"][user_id];
     }
 
-    if(peers[room].password && peers[room].password !== password) {
+    if (peers[room].password && peers[room].password !== password) {
       throw new HttpError(401, "Wrong password");
     }
 
     if (Object.keys(peers[room]["participants"] ?? {}).length >= MAX_USER) {
       throw new HttpError(400, "Room " + room + " full");
     }
-  }else{
-
+  } else {
     // Membuat ruangan baru
     peers[room] = {
       creator: user_id,
       participants: {}, // daftar peserta di ruangan
-      chats: []
+      chats: [],
     };
 
     // Jika password disediakan, tambahkan ke ruangan
     if (password) {
       peers[room].password = password;
     }
-
   }
 
   // const token = btoa(encoder.encode(JSON.stringify(body)).toString());
@@ -229,6 +234,10 @@ export const joinRoom: Handler = ({ body }) => {
       throw new HttpError(404, `Room ${room} not found`);
     }
 
+    if (!peers[room]["participants"][user_id]) {
+      delete peers[room]["participants"][user_id];
+    }
+
     if (Object.keys(peers[room]["participants"]).length >= MAX_USER) {
       throw new HttpError(400, `Room ${room} full`);
     }
@@ -237,7 +246,6 @@ export const joinRoom: Handler = ({ body }) => {
     if (peers[room].password && peers[room].password !== password) {
       throw new HttpError(401, "Wrong password");
     }
-    
 
     // Anda mungkin juga ingin menambahkan user_id ke daftar participants di sini
 
@@ -249,12 +257,12 @@ export const joinRoom: Handler = ({ body }) => {
   }
 };
 
-export const getPeers = (req) => {
-  return peers
-}
+export const getPeers = () => {
+  return peers;
+};
 export const getRoom: Handler = (rev) => {
   return peers[rev.params.room] ?? {};
-}
+};
 
 export const createRoom: Handler = ({ body }) => {
   try {
@@ -293,7 +301,6 @@ export const createRoom: Handler = ({ body }) => {
     // return { status: "Room created successfully" };
     const token = base64Encode(JSON.stringify(body));
     return { token };
-
   } catch (error) {
     console.error(error);
     throw error;
