@@ -10,7 +10,7 @@ type TAny = any;
 const MAX_USER = 160;
 // const decoder = new TextDecoder();
 // const encoder = new TextEncoder();
-const peers: Record<string, Record<string, TAny | WebSocket>> = {};
+let peers: Record<string, Record<string, TAny | WebSocket>> = {};
 
 function tryDecode(str: string): Record<string, TAny> {
   try {
@@ -258,6 +258,10 @@ export const joinRoom: Handler = ({ body }) => {
 };
 
 export const getPeers = () => {
+  return peers;
+};
+export const resetPeers = () => {
+  peers = {};
   return peers;
 };
 export const getRoom: Handler = (rev) => {
