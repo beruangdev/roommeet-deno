@@ -1,5 +1,6 @@
 {
   "tasks": {
+    "push": "git add .; git commit -m 'update'; git push",
     "start": "deno run -A server.ts",
     "dev": "deno run -A --watch server.ts --dev"
   },

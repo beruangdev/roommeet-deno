@@ -22,8 +22,7 @@ if (token) {
       method: "POST",
       body: JSON.stringify({
         room: $("#room").value,
-        id: $("#email").value,
-        username: $("#username").value,
+        user_id: $("#user_id").value,
         password: $("#password").value,
       }),
     })

@@ -75,16 +75,8 @@ const Home: FC = () => {
             <input
               class="my-input"
               type="text"
-              id="email"
-              placeholder="Email"
-              value="admin@local.com"
-              required
-            />
-            <input
-              class="my-input"
-              type="text"
-              id="username"
-              placeholder="Name"
+              id="user_id"
+              placeholder="Username"
               value="admin"
               required
             />

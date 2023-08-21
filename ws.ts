@@ -22,7 +22,7 @@ function wsSend(ws: WebSocket, data: Record<string, TAny>): void {
 }
 
 function isValidUser(user: TAny): boolean {
-  return user.id && user.room;
+  return user.user_id && user.room;
 }
 
 const middleware: Handler = (rev, next) => {
@@ -35,7 +35,7 @@ const middleware: Handler = (rev, next) => {
 
 const handler: Handler = ({ request, user }) => {
   const { socket, response } = Deno.upgradeWebSocket(request);
-  const { id, room, username } = user;
+  const { room, user_id } = user;
 
   socket.onopen = () => {
     if (!isValidUser(user)) {
@@ -48,15 +48,15 @@ const handler: Handler = ({ request, user }) => {
       return wsSend(socket, { type: "full", data: {} });
     }
 
-    wsSend(socket, { type: "opening", data: { id, room, username } });
+    wsSend(socket, { type: "opening", data: { room, user_id } });
 
-    peers[room][id] = socket;
+    peers[room][user_id] = socket;
     peers[room]["password"] = user.password;
 
-    for (const _id in peers[room]) {
-      const peerSocket = peers[room][_id] as WebSocket;
-      if (_id !== id && peerSocket.readyState === WebSocket.OPEN) {
-        wsSend(peerSocket, { type: "initReceive", data: { id } });
+    for (const _user_id in peers[room]) {
+      const peerSocket = peers[room][_user_id] as WebSocket;
+      if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
+        wsSend(peerSocket, { type: "initReceive", data: { user_id } });
       }
     }
   };
@@ -66,37 +66,37 @@ const handler: Handler = ({ request, user }) => {
 
     switch (type) {
       case "signal":
-        if (peers[room][data.id]) {
-          wsSend(peers[room][data.id] as WebSocket, {
+        if (peers[room][data.user_id]) {
+          wsSend(peers[room][data.user_id] as WebSocket, {
             type: "signal",
-            data: { id, signal: data.signal },
+            data: { user_id, signal: data.signal },
           });
         }
         break;
       case "initSend":
-        wsSend(peers[room][data.id] as WebSocket, {
+        wsSend(peers[room][data.user_id] as WebSocket, {
           type: "initSend",
-          data: { id },
+          data: { user_id },
         });
         break;
       case "chat":
-        for (const _id in peers[room]) {
-          const peerSocket = peers[room][_id] as WebSocket;
-          if (_id !== id && peerSocket.readyState === WebSocket.OPEN) {
-            wsSend(peers[room][_id] as WebSocket, {
+        for (const _user_id in peers[room]) {
+          const peerSocket = peers[room][_user_id] as WebSocket;
+          if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
+            wsSend(peers[room][_user_id] as WebSocket, {
               type: "chat",
-              data: { id, message: data.message },
+              data: { user_id, message: data.message },
             });
           }
         }
         break;
       case "toggleVideo":
-        for (const _id in peers[room]) {
-          const peerSocket = peers[room][_id] as WebSocket;
-          if (_id !== id && peerSocket.readyState === WebSocket.OPEN) {
-            wsSend(peers[room][_id] as WebSocket, {
+        for (const _user_id in peers[room]) {
+          const peerSocket = peers[room][_user_id] as WebSocket;
+          if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
+            wsSend(peers[room][_user_id] as WebSocket, {
               type: "toggleVideo",
-              data: { id, videoEnabled: data.videoEnabled },
+              data: { user_id, videoEnabled: data.videoEnabled },
             });
           }
         }
@@ -105,15 +105,15 @@ const handler: Handler = ({ request, user }) => {
   };
 
   socket.onclose = () => {
-    for (const _id in peers[room]) {
-      const peerSocket = peers[room][_id] as WebSocket;
-      if (_id !== id && peerSocket.readyState === WebSocket.OPEN) {
-        wsSend(peers[room][_id] as WebSocket, {
+    for (const _user_id in peers[room]) {
+      const peerSocket = peers[room][_user_id] as WebSocket;
+      if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
+        wsSend(peers[room][_user_id] as WebSocket, {
           type: "removePeer",
-          data: { id },
+          data: { user_id },
         });
       } else {
-        delete peers[room][_id];
+        delete peers[room][_user_id];
       }
     }
     if (Object.keys(peers[room]).length === 0) {
@@ -125,10 +125,10 @@ const handler: Handler = ({ request, user }) => {
 };
 
 const wsLogin: Handler = ({ body }) => {
-  const { id, room, password } = body;
+  const { user_id, room, password } = body;
 
-  if (peers[room]?.[id]) {
-    throw new HttpError(400, "User " + id + " already exist");
+  if (peers[room]?.[user_id]) {
+    throw new HttpError(400, "User " + user_id + " already exist");
   }
 
   if (Object.keys(peers[room] ?? {}).length >= MAX_USER) {

@@ -1,4 +1,5 @@
 let stunServers = [
+  "stun:stun.relay.metered.ca:80",
   "stun:stun.l.google.com:19302",
   "stun:stun1.l.google.com:19302",
   "stun:stun2.l.google.com:19302",
@@ -635,9 +636,9 @@ let stunServers = [
 ];
 
 const turnServers = [
-  {
-    urls: "stun:stun.relay.metered.ca:80",
-  },
+  // {
+  //   urls: "stun:stun.relay.metered.ca:80",
+  // },
   {
     urls: "turn:a.relay.metered.ca:80",
     username: "2ff716c35056d7188d97c9d7",
@@ -660,17 +661,48 @@ const turnServers = [
   },
 ];
 
-stunServers = stunServers.map(s => {
-  return {
-    urls: s
+
+async function getStunServers() {
+  const candidates = []
+  console.log("stunServers", stunServers.length)
+
+  async function checkRTC(server){
+    return new Promise(async (resolve, reject) => {
+      console.log("server", server)
+      try{
+        const udpConnection = new RTCPeerConnection({
+          iceServers: [{ urls: server }],
+        });
+        const candidate = await udpConnection.createOffer();
+        candidates.push(server)
+        console.log(`${server} is active`);
+        resolve(candidate)
+      }catch(error){
+        console.warn(`============ == == ${server} is INACTIVE`);
+        console.error(error)
+        reject(error)
+      }
+    })
   }
-})
 
-const iceServers = [
-  ...stunServers.slice(0, 500 - turnServers.length),
-  ...turnServers,
-];
+  const asyncStuns = []
+  for (const server of stunServers.slice(0, max_stun)) {  
+    asyncStuns.push(checkRTC(server))
+  }
 
+  await Promise.allSettled(asyncStuns)
+  const max_stun = 500 - turnServers.length
+
+  const newStunServers = candidates.map(s => {
+    return {
+      urls: s
+    }
+  })
+
+  console.log("newStunServers", newStunServers)
+
+  return newStunServers
+}
 
 
 // _testStunServers();
@@ -693,5 +725,14 @@ async function _testStunServers() {
       console.warn(`============ == == ${server} is INACTIVE`);
       console.log("🚀 ~ file: meet.js:875 ~ testStunServers ~ error:", error);
     }
+  }
+}
+
+async function getIceServers(){
+  const stunServers = await getStunServers()
+
+  return {
+    ...stunServers,
+    ...turnServers
   }
 }

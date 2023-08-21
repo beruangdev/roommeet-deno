@@ -38,10 +38,6 @@ if (!isDev && !isHttps) {
     "https://" + window.location.href.replace("http://", "");
 }
 
-const configuration = {
-  iceServers,
-};
-
 const constraints = {
   audio: true,
   video: {
@@ -61,14 +57,14 @@ function init(token, stream) {
   const protoWs = isHttps ? "wss" : "ws";
   ws = new WebSocket(protoWs + "://" + window.location.host + "/ws/" + token);
   ws.onclose = () => {
-    for (const id in peers) {
-      removePeer(id);
+    for (const user_id in peers) {
+      removePeer(user_id);
     }
   };
-  ws.onmessage = (e) => {
+  ws.onmessage = async (e) => {
     const { type, data } = JSON.parse(e.data);
     if (type === "initReceive") {
-      addPeer(data.id, false);
+      await addPeer(data.user_id, false);
       ws.send(
         JSON.stringify({
           type: "initSend",
@@ -80,29 +76,29 @@ function init(token, stream) {
       localStream = stream;
       info = data;
       document.getElementById("settings").style.display = "inline-block";
-      document.getElementById("me").innerHTML = `Me: ${info.username}`;
-    } else if (type === "initSend") addPeer(data.id, true);
-    else if (type === "removePeer") removePeer(data.id);
-    else if (type === "signal") peers[data.id].signal(data.signal);
+      document.getElementById("me").innerHTML = `Me: ${info.user_id}`;
+    } else if (type === "initSend") addPeer(data.user_id, true);
+    else if (type === "removePeer") removePeer(data.user_id);
+    else if (type === "signal") peers[data.user_id].signal(data.signal);
     else if (type === "full") alert("Room FULL");
     else if (type === "errorToken") fork.logout();
     else if (type === "toggleVideo") {
       console.log('data', data)
       const opacity = data.videoEnabled ? 1 : 0
-      document.querySelector(`video[id="${data.id}"]`).style.opacity = opacity
+      document.querySelector(`video[id="${data.user_id}"]`).style.opacity = opacity
     } else if (type === "chat") {
       chatMessage.innerHTML += `
         <div class="chat-message">
-          <b>${data.id.split("@")[0]}: </b>${data.message}
+          <b>${data.user_id.split("@")[0]}: </b>${data.message}
         </div>
       `;
       fork.openChat();
     }
   };
 }
-function removePeer(id) {
-  const videoEl = document.getElementById(id);
-  const colEl = document.getElementById("col-" + id);
+function removePeer(user_id) {
+  const videoEl = document.getElementById(user_id);
+  const colEl = document.getElementById("col-" + user_id);
   if (colEl && videoEl) {
     const tracks = videoEl.srcObject.getTracks();
     tracks.forEach(function (track) {
@@ -111,56 +107,61 @@ function removePeer(id) {
     videoEl.srcObject = null;
     videos.removeChild(colEl);
   }
-  if (peers[id]) peers[id].destroy();
-  delete peers[id];
+  if (peers[user_id]) peers[user_id].destroy();
+  delete peers[user_id];
 }
-function addPeer(id, am_initiator) {
-  peers[id] = new SimplePeer({
+async function addPeer(user_id, am_initiator) {
+  const iceServers = await getIceServers()
+  const configuration = {
+    iceServers: iceServers ,
+  };
+
+  peers[user_id] = new SimplePeer({
     initiator: am_initiator,
     stream: localStream,
     config: configuration,
   });
 
-  peers[id].on("signal", (data) => {
+  peers[user_id].on("signal", (data) => {
     ws.send(
       JSON.stringify({
         type: "signal",
         data: {
           signal: data,
-          id,
+          user_id,
         },
       })
     );
   });
-  peers[id].on("stream", (stream) => {
+  peers[user_id].on("stream", (stream) => {
     // col
     const col = document.createElement("col");
-    col.id = "col-" + id;
+    col.user_id = "col-" + user_id;
     col.className = "container";
 
     // video
     const newVid = document.createElement("video");
     newVid.srcObject = stream;
-    newVid.id = id;
+    newVid.user_id = user_id;
     newVid.playsinline = false;
     newVid.autoplay = true;
     newVid.className = "vid";
-    newVid.onclick = () => openPictureMode(newVid, id);
-    newVid.ontouchstart = () => openPictureMode(newVid, id);
+    newVid.onclick = () => openPictureMode(newVid, user_id);
+    newVid.ontouchstart = () => openPictureMode(newVid, user_id);
 
     // user
     const user = document.createElement("div");
     user.className = "overlay-text";
-    user.innerHTML = id;
+    user.innerHTML = user_id;
     col.append(newVid, user);
     videos.appendChild(col);
   });
 }
-function openPictureMode(el, id) {
+function openPictureMode(el, user_id) {
   el.requestPictureInPicture();
   el.onleavepictureinpicture = () => {
     setTimeout(() => {
-      document.getElementById(id).play();
+      document.getElementById(user_id).play();
     }, 300);
   };
 }
@@ -177,17 +178,17 @@ fork.switchMedia = () => {
   });
   localVideo.srcObject = null;
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-    for (const id in peers) {
-      for (const index in peers[id].streams[0].getTracks()) {
+    for (const user_id in peers) {
+      for (const index in peers[user_id].streams[0].getTracks()) {
         for (const index2 in stream.getTracks()) {
           if (
-            peers[id].streams[0].getTracks()[index].kind ===
+            peers[user_id].streams[0].getTracks()[index].kind ===
             stream.getTracks()[index2].kind
           ) {
-            peers[id].replaceTrack(
-              peers[id].streams[0].getTracks()[index],
+            peers[user_id].replaceTrack(
+              peers[user_id].streams[0].getTracks()[index],
               stream.getTracks()[index2],
-              peers[id].streams[0]
+              peers[user_id].streams[0]
             );
             break;
           }
@@ -202,17 +203,17 @@ fork.switchMedia = () => {
 
 fork.shareScreen = () => {
   navigator.mediaDevices.getDisplayMedia().then((stream) => {
-    for (const id in peers) {
-      for (const index in peers[id].streams[0].getTracks()) {
+    for (const user_id in peers) {
+      for (const index in peers[user_id].streams[0].getTracks()) {
         for (const index2 in stream.getTracks()) {
           if (
-            peers[id].streams[0].getTracks()[index].kind ===
+            peers[user_id].streams[0].getTracks()[index].kind ===
             stream.getTracks()[index2].kind
           ) {
-            peers[id].replaceTrack(
-              peers[id].streams[0].getTracks()[index],
+            peers[user_id].replaceTrack(
+              peers[user_id].streams[0].getTracks()[index],
               stream.getTracks()[index2],
-              peers[id].streams[0]
+              peers[user_id].streams[0]
             );
             break;
           }
@@ -224,7 +225,7 @@ fork.shareScreen = () => {
     updateButtons();
     stream.getVideoTracks()[0].onended = function () {
       fork.switchMedia();
-      addPeer(info.id, false);
+      addPeer(info.user_id, false);
     };
   });
 };
@@ -238,8 +239,8 @@ fork.removeLocalStream = () => {
     localVideo.srcObject = null;
   }
 
-  for (const id in peers) {
-    removePeer(id);
+  for (const user_id in peers) {
+    removePeer(user_id);
   }
 };
 
@@ -276,17 +277,17 @@ fork.toggleVid = () => {
     } else {
       // Mulai streaming gambar dari perangkat kembali
       navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-        for (const id in peers) {
-          for (const index in peers[id].streams[0].getTracks()) {
+        for (const user_id in peers) {
+          for (const index in peers[user_id].streams[0].getTracks()) {
             for (const index2 in stream.getTracks()) {
               if (
-                peers[id].streams[0].getTracks()[index].kind ===
+                peers[user_id].streams[0].getTracks()[index].kind ===
                 stream.getTracks()[index2].kind
               ) {
-                peers[id].replaceTrack(
-                  peers[id].streams[0].getTracks()[index],
+                peers[user_id].replaceTrack(
+                  peers[user_id].streams[0].getTracks()[index],
                   stream.getTracks()[index2],
-                  peers[id].streams[0]
+                  peers[user_id].streams[0]
                 );
                 break;
               }
@@ -334,7 +335,7 @@ chatForm.onsubmit = (e) => {
   ws.send(
     JSON.stringify({
       type: "chat",
-      data: { id: info.id, message: chatInput.value },
+      data: { user_id: info.user_id, message: chatInput.value },
     })
   );
   chatMessage.innerHTML += `
