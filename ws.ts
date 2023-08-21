@@ -1,5 +1,6 @@
 import { Handler, HttpError } from "./deps.ts";
-
+import { decode as base64Decode, encode as base64Encode } from 'https://deno.land/std@0.199.0/encoding/base64.ts'
+import { assertEquals } from 'https://deno.land/std@0.199.0/testing/asserts.ts'
 // deno-lint-ignore no-explicit-any
 type TAny = any;
 
@@ -139,7 +140,8 @@ const wsLogin: Handler = ({ body }) => {
     throw new HttpError(401, "Wrong password");
   }
 
-  const token = btoa(encoder.encode(JSON.stringify(body)).toString());
+  // const token = btoa(encoder.encode(JSON.stringify(body)).toString());
+  const token = base64Encode(JSON.stringify(body));
 
   return { token };
 };
