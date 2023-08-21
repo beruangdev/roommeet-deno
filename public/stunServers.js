@@ -1,5 +1,17 @@
 let stunServers = [
   "stun:stun.relay.metered.ca:80",
+  "stun:stun01.sipphone.com:3478",
+  "stun:stun.sipglobalphone.com:3478",
+  "stun:stun.ozekiphone.com:3478",
+  "stun:stun.budgetphone.nl:3478",
+  "stun:iphone-stun.strato-iphone.de:3478",
+  "stun:stun.linphone.org:3478",
+  "stun:stun.phone.com:3478",
+  "stun:stun.phoneserve.com:3478",
+  "stun:stun.clickphone.ro:3478",
+  "stun:stun.localphone.com:3478",
+  "stun:stun.magyarphone.eu:3478",
+  "stun:stun.nexphone.ch:3478",
   "stun:stun.l.google.com:19302",
   "stun:stun1.l.google.com:19302",
   "stun:stun2.l.google.com:19302",
@@ -9,7 +21,6 @@ let stunServers = [
   "stun:stun2.l.google.com:19305",
   "stun:stun3.l.google.com:19305",
   "stun:stun4.l.google.com:19305",
-  "stun:iphone-stun.strato-iphone.de:3478",
   "stun:23.21.150.121:3478",
   "stun:numb.viagenie.ca:3478",
   "stun:s1.taraba.net:3478",
@@ -43,7 +54,6 @@ let stunServers = [
   "stun:stun.bluesip.net:3478",
   "stun:stun.bmwgs.cz:3478",
   "stun:stun.botonakis.com:3478",
-  "stun:stun.budgetphone.nl:3478",
   "stun:stun.budgetsip.com:3478",
   "stun:stun.cablenet-as.net:3478",
   "stun:stun.callromania.ro:3478",
@@ -116,7 +126,6 @@ let stunServers = [
   "stun:stun.kiwilink.co.nz:3478",
   "stun:stun.kundenserver.de:3478",
   "stun:stun.linea7.net:3478",
-  "stun:stun.linphone.org:3478",
   "stun:stun.liveo.fr:3478",
   "stun:stun.lowratevoip.com:3478",
   "stun:stun.lugosoft.com:3478",
@@ -149,12 +158,10 @@ let stunServers = [
   "stun:stun.ooonet.ru:3478",
   "stun:stun.oriontelekom.rs:3478",
   "stun:stun.outland-net.de:3478",
-  "stun:stun.ozekiphone.com:3478",
   "stun:stun.patlive.com:3478",
   "stun:stun.personal-voip.de:3478",
   "stun:stun.petcube.com:3478",
-  "stun:stun.phone.com:3478",
-  "stun:stun.phoneserve.com:3478",
+
   "stun:stun.pjsip.org:3478",
   "stun:stun.poivy.com:3478",
   "stun:stun.powerpbx.org:3478",
@@ -318,7 +325,6 @@ let stunServers = [
   "stun:stun.chatous.com:3478",
   "stun:stun.chewinggum.nl:3478",
   "stun:stun.cibercloud.com.br:3478",
-  "stun:stun.clickphone.ro:3478",
   "stun:stun.coffee-sen.com:3478",
   "stun:stun.comrex.com:3478",
   "stun:stun.connecteddata.com:3478",
@@ -438,14 +444,12 @@ let stunServers = [
   "stun:stun.lineaencasa.com:3478",
   "stun:stun.linuxtrent.it:3478",
   "stun:stun.lleida.net:3478",
-  "stun:stun.localphone.com:3478",
   "stun:stun.logic.ky:3478",
   "stun:stun.londonweb.net:3478",
   "stun:stun.lovense.com:3478",
   "stun:stun.m-online.net:3478",
   "stun:stun.madavi.de:3478",
   "stun:stun.magnocall.com:3478",
-  "stun:stun.magyarphone.eu:3478",
   "stun:stun.marble.io:3478",
   "stun:stun.marcelproust.it:3478",
   "stun:stun.medvc.eu:3478",
@@ -469,7 +473,6 @@ let stunServers = [
   "stun:stun.neomedia.it:3478",
   "stun:stun.net-mag.cz:3478",
   "stun:stun.newrocktech.com:3478",
-  "stun:stun.nexphone.ch:3478",
   "stun:stun.next-gen.ro:3478",
   "stun:stun.nextcloud.com:3478",
   "stun:stun.nexxtmobile.de:3478",
@@ -530,7 +533,6 @@ let stunServers = [
   "stun:stun.siedle.com:3478",
   "stun:stun.signalwire.com:3478",
   "stun:stun.simlar.org:3478",
-  "stun:stun.sipglobalphone.com:3478",
   "stun:stun.sipnet.com:3478",
   "stun:stun.sipthor.net:3478",
   "stun:stun.siptrunk.com:3478",
@@ -628,7 +630,6 @@ let stunServers = [
   "stun:stun.zentauron.de:3478",
   "stun:stun.zepter.ru:3478",
   "stun:stun.zottel.net:3478",
-  "stun:stun01.sipphone.com:3478",
   "stun:stun1.3cx.com:3478",
   "stun:stun2.3cx.com:3478",
   "stun:stun3.3cx.com:3478",
@@ -664,18 +665,16 @@ const turnServers = [
 
 async function getStunServers() {
   const candidates = []
-  console.log("stunServers", stunServers.length)
 
   async function checkRTC(server){
     return new Promise(async (resolve, reject) => {
-      console.log("server", server)
       try{
         const udpConnection = new RTCPeerConnection({
           iceServers: [{ urls: server }],
         });
         const candidate = await udpConnection.createOffer();
         candidates.push(server)
-        console.log(`${server} is active`);
+        // console.log(`${server} is active`);
         resolve(candidate)
       }catch(error){
         console.warn(`============ == == ${server} is INACTIVE`);
@@ -684,6 +683,7 @@ async function getStunServers() {
       }
     })
   }
+  const max_stun = 500 - turnServers.length
 
   const asyncStuns = []
   for (const server of stunServers.slice(0, max_stun)) {  
@@ -691,15 +691,12 @@ async function getStunServers() {
   }
 
   await Promise.allSettled(asyncStuns)
-  const max_stun = 500 - turnServers.length
 
   const newStunServers = candidates.map(s => {
     return {
       urls: s
     }
   })
-
-  console.log("newStunServers", newStunServers)
 
   return newStunServers
 }
@@ -728,11 +725,20 @@ async function _testStunServers() {
   }
 }
 
-async function getIceServers(){
-  const stunServers = await getStunServers()
+function getStunStaticServers(){
+  const max_stun = 500 - turnServers.length
 
-  return {
+  return stunServers.slice(0, max_stun).map(s => {
+    return {
+      urls: s
+    }
+  })
+}
+async function getIceServers(){
+  // const stunServers = await getStunServers()
+  const stunServers = getStunStaticServers()
+  return [
     ...stunServers,
     ...turnServers
-  }
+  ]
 }

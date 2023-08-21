@@ -39,6 +39,21 @@ const middleware: Handler = (rev, next) => {
   return next();
 };
 
+function broadcastMessage(
+  room: string,
+  user_id: string,
+  type: string,
+  data: Record<string, TAny>
+) {
+  for (const _user_id in peers[room]["participants"]) {
+    const peerSocket = peers[room]["participants"][_user_id]["socket"] as WebSocket;
+    if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
+      wsSend(peerSocket, { type, data });
+    }
+  }
+}
+
+
 const handler: Handler = ({ request, user }) => {
   const { socket, response } = Deno.upgradeWebSocket(request);
   const { room, user_id, password } = user;
@@ -62,13 +77,16 @@ const handler: Handler = ({ request, user }) => {
     peers[room]["participants"][user_id] = {}
     peers[room]["participants"][user_id]["socket"] = socket;
 
-    for (const _user_id in peers[room]["participants"]) {
-      const peerSocket =
-        peers[room]["participants"][_user_id]["socket"] as WebSocket;
-        if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
-        wsSend(peerSocket, { type: "initReceive", data: { user_id } });
-      }
-    }
+    // for (const _user_id in peers[room]["participants"]) {
+    //   const peerSocket =
+    //     peers[room]["participants"][_user_id]["socket"] as WebSocket;
+    //     if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
+    //     wsSend(peerSocket, { type: "initReceive", data: { user_id } });
+    //   }
+    // }
+    broadcastMessage({
+      room, user_id, type: "initReceive", data: { user_id }
+    })
   };
 
   socket.onmessage = (e) => {
@@ -93,47 +111,58 @@ const handler: Handler = ({ request, user }) => {
         });
         break;
       case "chat":
-        for (const _user_id in peers[room]["participants"]) {
-          const peerSocket =
-            peers[room]["participants"][_user_id]["socket"] as WebSocket;
-          if (
-            _user_id !== user_id && peerSocket.readyState === WebSocket.OPEN
-          ) {
-            peers[room]["chats"].push({ user_id, message: data.message })
-            wsSend(peerSocket, {
-              type: "chat",
-              data: { user_id, message: data.message },
-            });
-          }
-        }
+        // for (const _user_id in peers[room]["participants"]) {
+        //   const peerSocket =
+        //     peers[room]["participants"][_user_id]["socket"] as WebSocket;
+        //   if (
+        //     _user_id !== user_id && peerSocket.readyState === WebSocket.OPEN
+        //   ) {
+        //     peers[room]["chats"].push({ user_id, message: data.message })
+        //     wsSend(peerSocket, {
+        //       type: "chat",
+        //       data: { user_id, message: data.message },
+        //     });
+        //   }
+        // }
+
+        broadcastMessage({
+          room, user_id, type: "chat", data: { user_id, message: data.message }
+        })
         break;
       case "toggleVideo":
-        for (const _user_id in peers[room]["participants"]) {
-          const peerSocket =
-            peers[room]["participants"][_user_id]["socket"] as WebSocket;
-          if (
-            _user_id !== user_id && peerSocket.readyState === WebSocket.OPEN
-          ) {
-            wsSend(peerSocket, {
-              type: "toggleVideo",
-              data: { user_id, videoEnabled: data.videoEnabled },
-            });
-          }
-        }
+        // for (const _user_id in peers[room]["participants"]) {
+        //   const peerSocket =
+        //     peers[room]["participants"][_user_id]["socket"] as WebSocket;
+        //   if (
+        //     _user_id !== user_id && peerSocket.readyState === WebSocket.OPEN
+        //   ) {
+        //     wsSend(peerSocket, {
+        //       type: "toggleVideo",
+        //       data: { user_id, videoEnabled: data.videoEnabled },
+        //     });
+        //   }
+        // }
+
+        broadcastMessage({
+          room, user_id, type: "toggleVideo", data: { user_id, videoEnabled: data.videoEnabled }
+        })
         break;
       case "toggleMute":
-        for (const _user_id in peers[room]["participants"]) {
-          const peerSocket =
-            peers[room]["participants"][_user_id]["socket"] as WebSocket;
-          if (
-            _user_id !== user_id && peerSocket.readyState === WebSocket.OPEN
-          ) {
-            wsSend(peerSocket, {
-              type: "toggleMute",
-              data: { user_id, soundEnabled: data.soundEnabled },
-            });
-          }
-        }
+        // for (const _user_id in peers[room]["participants"]) {
+        //   const peerSocket =
+        //     peers[room]["participants"][_user_id]["socket"] as WebSocket;
+        //   if (
+        //     _user_id !== user_id && peerSocket.readyState === WebSocket.OPEN
+        //   ) {
+        //     wsSend(peerSocket, {
+        //       type: "toggleMute",
+        //       data: { user_id, soundEnabled: data.soundEnabled },
+        //     });
+        //   }
+        // }
+        broadcastMessage({
+          room, user_id, type: "toggleMute", data: { user_id, soundEnabled: data.soundEnabled }
+        })
         break;
     }
   };
@@ -141,18 +170,22 @@ const handler: Handler = ({ request, user }) => {
   socket.onclose = () => {
    
     if(peers[room]){
-      for (const _user_id in peers[room]["participants"]) {
-        const peerSocket =
-          peers[room]["participants"][_user_id]["socket"] as WebSocket;
-        if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
-          wsSend(peerSocket as WebSocket, {
-            type: "removePeer",
-            data: { user_id },
-          });
-        } else {
-          delete peers[room]["participants"][user_id];
-        }
-      }
+      // for (const _user_id in peers[room]["participants"]) {
+      //   const peerSocket =
+      //     peers[room]["participants"][_user_id]["socket"] as WebSocket;
+      //   if (_user_id !== user_id && peerSocket.readyState === WebSocket.OPEN) {
+      //     wsSend(peerSocket as WebSocket, {
+      //       type: "removePeer",
+      //       data: { user_id },
+      //     });
+      //   } else {
+      //     delete peers[room]["participants"][user_id];
+      //   }
+      // }
+
+      broadcastMessage({
+        room, user_id, type: "removePeer", data: { user_id }
+      })
 
       if (!Object.keys(peers[room]["participants"] ?? {}).includes(peers[room].creator)) {
         // for (const _user_id in peers[room]["participants"]) {

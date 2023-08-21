@@ -34,7 +34,7 @@ const middleware: Handler = (rev, next) => {
 const handler: Handler = ({ request, user }) => {
   console.log('user', user)
   const { socket, response } = Deno.upgradeWebSocket(request);
-  const { id, username, password, room } = user;
+  const { id, password, room } = user;
   peers[room] = peers[room] || {};
   socket.onopen = () => {
     if (!id && !room) {
@@ -112,7 +112,7 @@ const handler: Handler = ({ request, user }) => {
 
 export const wsHandlers: Handler[] = [middleware, handler];
 export const wsLogin: Handler = ({ body }) => {
-  const { id, room, username, password } = body;
+  const { id, room, password } = body;
   console.log("peers", peers)
   if (peers[room]?.[id]) {
     throw new HttpError(400, "User " + id + " already exist");

@@ -50,91 +50,6 @@ const constraints = {
   },
 };
 
-updateVideoQuality()
-function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connection.downlink) {
-  // const constraints = {
-  //   video: {},
-  //   audio: true
-  // };
-
-  // downlinkMbps *= 1000; // Convert Mbps to kbps
-
-  switch (context) {
-    case '1:1':
-      if (downlinkMbps >= 1.8) {
-        constraints.video.width.max = 1920;
-        constraints.video.height.max = 1080;
-      } else if (downlinkMbps >= 1.2) {
-        constraints.video.width.max = 1280;
-        constraints.video.height.max = 720;
-      } else if (downlinkMbps >= 0.6) {
-        constraints.video.width.max = 640;
-        constraints.video.height.max = 360;
-      } else {
-        // constraints.video = false; // Turn off video
-        constraints.video.width.max = 300;
-        constraints.video.height.max = 300;
-      }
-      break;
-
-    case 'group':
-      if (downlinkMbps >= 3.8) {
-        constraints.video.width.max = 1920;
-        constraints.video.height.max = 1080;
-      } else if (downlinkMbps >= 2.6) {
-        constraints.video.width.max = 1280;
-        constraints.video.height.max = 720;
-      } else if (downlinkMbps >= 0.6) {
-        constraints.video.width.max = 640;
-        constraints.video.height.max = 360;
-      } else {
-        // constraints.video = false;
-        constraints.video.width.max = 640;
-        constraints.video.height.max = 360;
-      }
-      break;
-
-    case 'webinar':
-      if (downlinkMbps >= 3.0) {
-        constraints.video.width.max = 1920;
-        constraints.video.height.max = 1080;
-      } else if (downlinkMbps >= 1.2) {
-        constraints.video.width.max = 1280;
-        constraints.video.height.max = 720;
-      } else if (downlinkMbps >= 0.6) {
-        constraints.video.width.max = 640;
-        constraints.video.height.max = 360;
-      } else if (downlinkMbps >= 0.15) {
-        constraints.video.width.max = 320;
-        constraints.video.height.max = 240;
-      } else {
-        // constraints.video = false;
-        constraints.video.width.max = 640;
-        constraints.video.height.max = 360;
-      }
-      break;
-
-    case 'phone':
-      // if (downlinkMbps < 0.06) {
-      //   constraints.audio = false; // Can't sustain VoIP
-      // }
-      break;
-
-    default:
-      console.error('Invalid context provided');
-      return null;
-  }
-
-  console.log("constraints", constraints)
-  return constraints;
-}
-
-navigator.connection && navigator.connection.addEventListener('change', () => {
-  console.log("navigator.connection change", navigator.connection.downlink)
-  updateVideoQuality()
-});
-
-
 constraints.video.facingMode = {
   ideal: "user",
 };
@@ -343,31 +258,22 @@ fork.removeLocalStream = () => {
 
 fork.toggleMute = () => {
   for (const index in localStream.getAudioTracks()) {
-    if (localStream.getAudioTracks()[index].enabled) {
-      // Jika audio sedang diaktifkan, hentikan track
-      localStream.getAudioTracks()[index].stop();
-      muteButton.innerText = "Muted";
-    } else {
-      // Jika audio sedang dimatikan, aktifkan kembali
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(function(audioStream) {
-          const audioTrack = audioStream.getAudioTracks()[0];
-          localStream.addTrack(audioTrack);
-          muteButton.innerText = "Unmuted";
-        });
-    }
-    
-    ws.send(
-      JSON.stringify({
-        type: "toggleMute",
-        data: {
-          soundEnabled: localStream.getAudioTracks()[index].enabled,
-        },
-      })
-    );
+    localStream.getAudioTracks()[index].enabled =
+      !localStream.getAudioTracks()[index].enabled;
+    muteButton.innerText = localStream.getAudioTracks()[index].enabled
+      ? "Unmuted"
+      : "Muted";
+
+      ws.send(
+        JSON.stringify({
+          type: "toggleMute",
+          data: {
+            soundEnabled,
+          },
+        })
+      );
   }
 };
-
 
 fork.toggleVid = () => {
   for (const index in localStream.getVideoTracks()) {
@@ -464,7 +370,6 @@ chatForm.onsubmit = (e) => {
 
 if (token) {
   meetElement.style.display = "block";
-  updateVideoQuality();
   navigator.mediaDevices
     .getUserMedia(constraints)
     .then(function (stream) {
