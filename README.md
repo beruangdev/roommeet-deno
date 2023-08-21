@@ -30,7 +30,7 @@ deno task start
 deno run --allow-net --allow-read server.ts
 ```
 
-open in http://localhost:8080
+open in http://localhost:3080
 
 <!-- ## Demo -->
 
