@@ -17,12 +17,14 @@ fork.logout = () => {
     window.location.href = "./";
   }, 300);
 };
+
 fork.openChat = () => {
   chatbox.style.display = "block";
   setTimeout(() => {
     chatInput.focus();
   }, 300);
 };
+
 fork.closeChat = () => {
   chatbox.style.display = "none";
 };
