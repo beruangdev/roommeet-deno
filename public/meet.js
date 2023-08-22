@@ -182,7 +182,24 @@ let info = {};
 function init(token, stream) {
   const protoWs = isHttps ? "wss" : "ws";
   ws = new WebSocket(protoWs + "://" + window.location.host + "/ws/" + token);
-  ws.onclose = () => {
+
+  // Menangani ketika koneksi WebSocket berhasil dibuka
+  ws.onopen = function (event) {
+    console.log("WebSocket Connected:", event);
+  };
+
+  ws.onerror = function (event) {
+    console.error("WebSocket Error:", event);
+    // Anda dapat menambahkan tindakan lain, seperti menampilkan pesan ke pengguna
+  };
+
+  ws.onclose = (event) => {
+    if (event.wasClean) {
+      console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
+    } else {
+      console.error("Connection died"); // misalnya, "kill" atau "lost" tanpa penutupan bersih
+    }
+
     for (const user_id in peers) {
       removePeer(user_id);
     }
@@ -197,6 +214,10 @@ function init(token, stream) {
           data,
         })
       );
+    } else if (type === "userStatus") {
+      const { user_id, status } = data.data;
+      console.log("userStatus", user_id, status);
+      // TODO: update user status
     } else if (type === "opening") {
       localVideo.srcObject = stream;
       localStream = stream;
@@ -215,9 +236,9 @@ function init(token, stream) {
       document.querySelector(`video[id="${data.user_id}"]`).style.opacity =
         opacity;
     } else if (type === "toggleMute") {
-      console.log(`${data.user_id} mute sound`);
-      // const opacity = data.videoEnabled ? 1 : 0
-      // document.querySelector(`video[id="${data.user_id}"]`).style.opacity = opacity
+      const { user_id, soundEnabled } = data;
+      console.log("toggleMute", user_id, soundEnabled);
+      // TODO: toggle sound
     } else if (type === "chat") {
       chatMessage.innerHTML += `
         <div class="chat-message">
@@ -384,18 +405,22 @@ fork.removeLocalStream = () => {
 
 fork.toggleMute = () => {
   for (const index in localStream.getAudioTracks()) {
-    localStream.getAudioTracks()[index].enabled = !localStream.getAudioTracks()[index].enabled;
+    localStream.getAudioTracks()[index].enabled =
+      !localStream.getAudioTracks()[index].enabled;
 
     audioEnabled = localStream.getAudioTracks()[index].enabled;
-      updateVideoQuality()
-      if (!audioEnabled) {
+    updateVideoQuality();
+    if (!audioEnabled) {
       // Jika audio sedang diaktifkan, hentikan track
       // localStream.getAudioTracks()[index].stop();
-      localStream.getAudioTracks()[index].applyConstraints(constraints).then((audioStream) => {
-        muteButton.innerText = "Muted";
-        //     const audioTrack = audioStream.getAudioTracks()[0];
-        // localStream.addTrack(audioStream);
-      })
+      localStream
+        .getAudioTracks()
+        [index].applyConstraints(constraints)
+        .then((_audioStream) => {
+          muteButton.innerText = "Muted";
+          //     const audioTrack = audioStream.getAudioTracks()[0];
+          // localStream.addTrack(audioStream);
+        });
     } else {
       // localStream.getAudioTracks()[index].applyConstraints(constraints).then((audioStream) => {
       //     muteButton.innerText = "Unmuted";
