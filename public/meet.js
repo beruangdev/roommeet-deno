@@ -13,9 +13,9 @@ const isDev = window.__DEV__ ?? false;
 
 fork.logout = () => {
   localStorage.removeItem("meet_token");
-  setTimeout(() => {
-    window.location.href = "./";
-  }, 300);
+  // setTimeout(() => {
+  //   window.location.href = "./";
+  // }, 300);
 };
 
 fork.openChat = () => {

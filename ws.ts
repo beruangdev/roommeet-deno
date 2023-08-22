@@ -12,6 +12,15 @@ const MAX_USER = 160;
 // const encoder = new TextEncoder();
 let peers: Record<string, Record<string, TAny | WebSocket>> = {};
 
+function validatePeers(room: string){
+  if(peers[room]){
+    if(!peers[room]?.participants) peers[room]["participants"] = {}
+    if(!peers[room]?.password) peers[room]["password"] = ""
+    if(!peers[room]?.creator) peers[room]["creator"] = ""
+    if(!peers[room]?.chat) peers[room]["chat"] = []
+  }
+}
+
 function tryDecode(str: string): Record<string, TAny> {
   try {
     // const uint = Uint8Array.from(atob(str).split(",") as Iterable<number>);
@@ -51,6 +60,8 @@ const handler: Handler = ({ request, user }) => {
 
     peers[room] = peers[room] || {};
 
+    validatePeers(room)
+
     if (password && password !== peers[room]?.password) {
       console.log("errorPassword", password, peers[room]?.password)
       return wsSend(socket, { type: "errorPassword", data: {} });
@@ -77,6 +88,8 @@ const handler: Handler = ({ request, user }) => {
 
   socket.onmessage = (e) => {
     const { type, data } = JSON.parse(e.data);
+
+    validatePeers(room)
 
     switch (type) {
       case "signal":
@@ -143,6 +156,8 @@ const handler: Handler = ({ request, user }) => {
   };
 
   socket.onclose = () => {
+    validatePeers(room)
+
     if (peers[room]) {
       for (const _user_id in peers[room]["participants"]) {
         const peerSocket =
@@ -184,12 +199,13 @@ export const wsLogin: Handler = ({ body }) => {
   const { user_id, room, password } = body;
 
   if (peers[room]) {
+    validatePeers(room)
     if (!peers[room]["participants"]) {
       delete peers[room];
     } else if (peers[room]["participants"][user_id]) {
       throw new HttpError(400, "User " + user_id + " already exist");
     } else {
-      delete peers[room]["participants"][user_id];
+      // delete peers[room]["participants"][user_id];
     }
 
     if (peers[room]?.password && password && peers[room]["password"] !== password) {
@@ -199,7 +215,7 @@ export const wsLogin: Handler = ({ body }) => {
     if (Object.keys(peers[room]?.participants ?? {}).length >= MAX_USER) {
       throw new HttpError(400, "Room " + room + " full");
     }
-    
+
   } else {
     // Membuat ruangan baru
     peers[room] = {
@@ -239,6 +255,8 @@ export const joinRoom: Handler = ({ body }) => {
       throw new HttpError(404, `Room ${room} not found`);
     }
 
+    validatePeers(room)
+    
     if (!peers[room]["participants"][user_id]) {
       delete peers[room]["participants"][user_id];
     }
