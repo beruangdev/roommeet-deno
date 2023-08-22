@@ -196,7 +196,7 @@ export const wsLogin: Handler = ({ body }) => {
       throw new HttpError(401, "Wrong password");
     }
 
-    if (Object.keys(peers[room]["participants"] ?? {}).length >= MAX_USER) {
+    if (Object.keys(peers[room]?.participants ?? {}).length >= MAX_USER) {
       throw new HttpError(400, "Room " + room + " full");
     }
   } else {
