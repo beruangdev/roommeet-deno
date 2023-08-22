@@ -32,6 +32,7 @@ fork.closeChat = () => {
 let ws;
 let localStream = null;
 let videoEnabled = true;
+let audioEnabled = true;
 
 const peers = {};
 
@@ -41,7 +42,7 @@ if (!isDev && !isHttps) {
 }
 
 const constraints = {
-  audio: true,
+  audio: audioEnabled,
   video: {
     width: {
       max: 100,
@@ -58,7 +59,7 @@ function updateVideoQuality(
   downlinkMbps = navigator.connection.downlink
 ) {
   console.log("updateVideoQuality");
-
+  constraints.audio = audioEnabled
   switch (context) {
     case "1:1":
       if (downlinkMbps >= 2) {
@@ -72,11 +73,11 @@ function updateVideoQuality(
       } else if (downlinkMbps >= 1) {
         constraints.video.width = { ideal: 640, max: 640 };
         constraints.video.height = { ideal: 360, max: 360 };
-        constraints.video.frameRate = { ideal: 25, max: 30 };
+        constraints.video.frameRate = { ideal: 20, max: 25 };
       } else if (downlinkMbps >= 0.5) {
         constraints.video.width = { ideal: 480, max: 640 };
         constraints.video.height = { ideal: 270, max: 360 };
-        constraints.video.frameRate = { ideal: 20, max: 25 };
+        constraints.video.frameRate = { ideal: 15, max: 20 };
       } else if (downlinkMbps >= 0.2) {
         constraints.video.width = { ideal: 320, max: 480 };
         constraints.video.height = { ideal: 180, max: 270 };
@@ -381,19 +382,26 @@ fork.removeLocalStream = () => {
 
 fork.toggleMute = () => {
   for (const index in localStream.getAudioTracks()) {
-    if (localStream.getAudioTracks()[index].enabled) {
+    localStream.getAudioTracks()[index].enabled =
+      !localStream.getAudioTracks()[index].enabled;
+
+    audioEnabled = localStream.getAudioTracks()[index].enabled
+    if (!audioEnabled) {
       // Jika audio sedang diaktifkan, hentikan track
       localStream.getAudioTracks()[index].stop();
       muteButton.innerText = "Muted";
     } else {
+      updateVideoQuality()
+      refreshStreamWithNewConstraints()
+
       // Jika audio sedang dimatikan, aktifkan kembali
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then(function (audioStream) {
-          const audioTrack = audioStream.getAudioTracks()[0];
-          localStream.addTrack(audioTrack);
-          muteButton.innerText = "Unmuted";
-        });
+      // navigator.mediaDevices
+      //   .getUserMedia({ audio: true })
+      //   .then(function (audioStream) {
+      //     const audioTrack = audioStream.getAudioTracks()[0];
+      //     localStream.addTrack(audioTrack);
+      //     muteButton.innerText = "Unmuted";
+      //   });
     }
 
     ws.send(
@@ -411,6 +419,7 @@ fork.toggleVid = () => {
   for (const index in localStream.getVideoTracks()) {
     localStream.getVideoTracks()[index].enabled =
       !localStream.getVideoTracks()[index].enabled;
+
     videoEnabled = localStream.getVideoTracks()[index].enabled; // Simpan status video saat tombol ditekan
     vidButton.innerText = videoEnabled ? "Video Enabled" : "Video Disabled";
 
@@ -429,28 +438,30 @@ fork.toggleVid = () => {
       localVideo.srcObject = null;
     } else {
       // Mulai streaming gambar dari perangkat kembali
-      navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-        for (const user_id in peers) {
-          for (const index in peers[user_id].streams[0].getTracks()) {
-            for (const index2 in stream.getTracks()) {
-              if (
-                peers[user_id].streams[0].getTracks()[index].kind ===
-                stream.getTracks()[index2].kind
-              ) {
-                peers[user_id].replaceTrack(
-                  peers[user_id].streams[0].getTracks()[index],
-                  stream.getTracks()[index2],
-                  peers[user_id].streams[0]
-                );
-                break;
-              }
-            }
-          }
-        }
-        localStream = stream;
-        localVideo.srcObject = stream;
-        updateButtons();
-      });
+      updateVideoQuality()
+      refreshStreamWithNewConstraints()
+      // navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+      //   for (const user_id in peers) {
+      //     for (const index in peers[user_id].streams[0].getTracks()) {
+      //       for (const index2 in stream.getTracks()) {
+      //         if (
+      //           peers[user_id].streams[0].getTracks()[index].kind ===
+      //           stream.getTracks()[index2].kind
+      //         ) {
+      //           peers[user_id].replaceTrack(
+      //             peers[user_id].streams[0].getTracks()[index],
+      //             stream.getTracks()[index2],
+      //             peers[user_id].streams[0]
+      //           );
+      //           break;
+      //         }
+      //       }
+      //     }
+      //   }
+      //   localStream = stream;
+      //   localVideo.srcObject = stream;
+      //   updateButtons();
+      // });
     }
   }
 };
