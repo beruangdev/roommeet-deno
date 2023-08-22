@@ -190,7 +190,7 @@ export const wsLogin: Handler = ({ body }) => {
       delete peers[room]["participants"][user_id];
     }
 
-    if (peers[room].password && peers[room].password !== password) {
+    if (peers[room]["password"] && peers[room]["password"] !== password) {
       throw new HttpError(401, "Wrong password");
     }
 
@@ -207,7 +207,7 @@ export const wsLogin: Handler = ({ body }) => {
 
     // Jika password disediakan, tambahkan ke ruangan
     if (password) {
-      peers[room].password = password;
+      peers[room]["password"] = undefined;
     }
   }
 
