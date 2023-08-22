@@ -49,100 +49,99 @@ const constraints = {
     height: {
       max: 100,
     },
-    frameRate: { ideal: 24, max: 40 },
+    frameRate: { ideal: 24, max: 40 }
   },
 };
-updateVideoQuality();
-function updateVideoQuality(
-  context = "1:1",
-  downlinkMbps = navigator.connection.downlink
-) {
-  console.log("updateVideoQuality");
-
+updateVideoQuality()
+function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connection.downlink) {
+  console.log('updateVideoQuality')
+  
   switch (context) {
-    case "1:1":
-      if (downlinkMbps >= 2) {
-        constraints.video.width = { ideal: 1920, max: 1920 };
-        constraints.video.height = { ideal: 1080, max: 1080 };
-        constraints.video.frameRate = { ideal: 30, max: 30 };
-      } else if (downlinkMbps >= 1.5) {
-        constraints.video.width = { ideal: 1280, max: 1280 };
-        constraints.video.height = { ideal: 720, max: 720 };
-        constraints.video.frameRate = { ideal: 30, max: 30 };
-      } else if (downlinkMbps >= 1) {
-        constraints.video.width = { ideal: 640, max: 640 };
-        constraints.video.height = { ideal: 360, max: 360 };
-        constraints.video.frameRate = { ideal: 25, max: 30 };
-      } else if (downlinkMbps >= 0.5) {
-        constraints.video.width = { ideal: 480, max: 640 };
-        constraints.video.height = { ideal: 270, max: 360 };
-        constraints.video.frameRate = { ideal: 20, max: 25 };
-      } else if (downlinkMbps >= 0.2) {
-        constraints.video.width = { ideal: 320, max: 480 };
-        constraints.video.height = { ideal: 180, max: 270 };
-        constraints.video.frameRate = { ideal: 15, max: 20 };
-      } else {
-        constraints.video.width = { ideal: 160, max: 320 };
-        constraints.video.height = { ideal: 90, max: 180 };
-        constraints.video.frameRate = { ideal: 10, max: 15 };
+    case '1:1':
+      if (downlinkMbps >= 1.8) {
+        constraints.video.width.max = 1920;
+        constraints.video.height.max = 1080;
+      } else if (downlinkMbps >= 1.2) {
+        constraints.video.width.max = 1280;
+        constraints.video.height.max = 720;
+      } else if (downlinkMbps >= 0.6) {
+        constraints.video.width.max = 640;
+        constraints.video.height.max = 360;
+        
+      } 
+      else if (downlinkMbps >= 0.3) {
+        constraints.video.width.max = 320;
+        constraints.video.height.max = 180;
+      }
+      else if (downlinkMbps >= 0.15) {
+        constraints.video.width.max = 160;
+        constraints.video.height.max = 90;
+        constraints.video.frameRate.max = 20;
+        constraints.video.frameRate.ideal = 15;
+      }
+      else {
+        constraints.video.width.max = 100;
+        constraints.video.height.max = 100;
+        constraints.video.frameRate.max = 15;
+        constraints.video.frameRate.ideal = 10;
       }
       break;
 
-    case "group":
-      if (downlinkMbps >= 4) {
-        constraints.video.width = { ideal: 1920, max: 1920 };
-        constraints.video.height = { ideal: 1080, max: 1080 };
-      } else if (downlinkMbps >= 3) {
-        constraints.video.width = { ideal: 1280, max: 1280 };
-        constraints.video.height = { ideal: 720, max: 720 };
-      } else if (downlinkMbps >= 1) {
-        constraints.video.width = { ideal: 640, max: 640 };
-        constraints.video.height = { ideal: 360, max: 360 };
+    case 'group':
+      if (downlinkMbps >= 3.8) {
+        constraints.video.width.max = 1920;
+        constraints.video.height.max = 1080;
+      } else if (downlinkMbps >= 2.6) {
+        constraints.video.width.max = 1280;
+        constraints.video.height.max = 720;
+      } else if (downlinkMbps >= 0.6) {
+        constraints.video.width.max = 640;
+        constraints.video.height.max = 360;
       } else {
-        constraints.video.width = { ideal: 480, max: 640 };
-        constraints.video.height = { ideal: 270, max: 360 };
+        constraints.video.width.max = 640;
+        constraints.video.height.max = 360;
       }
       break;
 
-    case "webinar":
-      if (downlinkMbps >= 3.5) {
-        constraints.video.width = { ideal: 1920, max: 1920 };
-        constraints.video.height = { ideal: 1080, max: 1080 };
-      } else if (downlinkMbps >= 2) {
-        constraints.video.width = { ideal: 1280, max: 1280 };
-        constraints.video.height = { ideal: 720, max: 720 };
-      } else if (downlinkMbps >= 1) {
-        constraints.video.width = { ideal: 640, max: 640 };
-        constraints.video.height = { ideal: 360, max: 360 };
-      } else if (downlinkMbps >= 0.5) {
-        constraints.video.width = { ideal: 480, max: 640 };
-        constraints.video.height = { ideal: 270, max: 360 };
+    case 'webinar':
+      if (downlinkMbps >= 3.0) {
+        constraints.video.width.max = 1920;
+        constraints.video.height.max = 1080;
+      } else if (downlinkMbps >= 1.2) {
+        constraints.video.width.max = 1280;
+        constraints.video.height.max = 720;
+      } else if (downlinkMbps >= 0.6) {
+        constraints.video.width.max = 640;
+        constraints.video.height.max = 360;
+      } else if (downlinkMbps >= 0.15) {
+        constraints.video.width.max = 320;
+        constraints.video.height.max = 240;
       } else {
-        constraints.video.width = { ideal: 320, max: 480 };
-        constraints.video.height = { ideal: 180, max: 270 };
+        constraints.video.width.max = 640;
+        constraints.video.height.max = 360;
       }
       break;
 
     default:
-      console.error("Invalid context provided");
+      console.error('Invalid context provided');
       return null;
   }
 
-  console.log("constraints", constraints);
+  console.log("constraints", constraints)
+  return constraints;
 }
 
-navigator.connection &&
-  navigator.connection.addEventListener("change", () => {
-    console.log("navigator.connection change", navigator.connection.downlink);
-    if (videoEnabled) {
-      updateVideoQuality();
-      refreshStreamWithNewConstraints();
-    }
-  });
+navigator.connection && navigator.connection.addEventListener('change', () => {
+  console.log("navigator.connection change", navigator.connection.downlink)
+  if(videoEnabled){
+    updateVideoQuality()
+    refreshStreamWithNewConstraints();
+  }
+});
 
 function refreshStreamWithNewConstraints() {
-  console.log("refreshStreamWithNewConstraints");
-
+  console.log('refreshStreamWithNewConstraints')
+  
   if (localStream) {
     const tracks = localStream.getTracks();
     tracks.forEach(function (track) {
@@ -173,6 +172,7 @@ function refreshStreamWithNewConstraints() {
     updateButtons();
   });
 }
+
 
 constraints.video.facingMode = {
   ideal: "user",
@@ -210,14 +210,15 @@ function init(token, stream) {
     else if (type === "errorPassword") fork.logout();
     else if (type === "closeRoom") fork.logout();
     else if (type === "toggleVideo") {
-      const opacity = data.videoEnabled ? 1 : 0;
-      document.querySelector(`video[id="${data.user_id}"]`).style.opacity =
-        opacity;
-    } else if (type === "toggleMute") {
-      console.log(`${data.user_id} mute sound`);
+      const opacity = data.videoEnabled ? 1 : 0
+      document.querySelector(`video[id="${data.user_id}"]`).style.opacity = opacity
+    } 
+    else if (type === "toggleMute") {
+      console.log(`${data.user_id} mute sound`)
       // const opacity = data.videoEnabled ? 1 : 0
       // document.querySelector(`video[id="${data.user_id}"]`).style.opacity = opacity
-    } else if (type === "chat") {
+    } 
+    else if (type === "chat") {
       chatMessage.innerHTML += `
         <div class="chat-message">
           <b>${data.user_id.split("@")[0]}: </b>${data.message}
@@ -240,13 +241,13 @@ function removePeer(user_id) {
   }
   if (peers[user_id]) peers[user_id].destroy();
 
-  document.querySelector(`[data-user_id="${user_id}"]`).remove();
+  document.querySelector(`[data-user_id="${user_id}"]`).remove()
   delete peers[user_id];
 }
 async function addPeer(user_id, am_initiator) {
-  const iceServers = await getIceServers();
+  const iceServers = await getIceServers()
   const configuration = {
-    iceServers: iceServers,
+    iceServers: iceServers ,
   };
 
   peers[user_id] = new SimplePeer({
@@ -272,7 +273,7 @@ async function addPeer(user_id, am_initiator) {
     const col = document.createElement("col");
     col.user_id = "col-" + user_id;
     col.className = "container";
-    col.setAttribute("data-user_id", user_id);
+    col.setAttribute("data-user_id", user_id)
 
     // video
     const newVid = document.createElement("video");
@@ -387,15 +388,14 @@ fork.toggleMute = () => {
       muteButton.innerText = "Muted";
     } else {
       // Jika audio sedang dimatikan, aktifkan kembali
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then(function (audioStream) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function(audioStream) {
           const audioTrack = audioStream.getAudioTracks()[0];
           localStream.addTrack(audioTrack);
           muteButton.innerText = "Unmuted";
         });
     }
-
+    
     ws.send(
       JSON.stringify({
         type: "toggleMute",
@@ -406,6 +406,7 @@ fork.toggleMute = () => {
     );
   }
 };
+
 
 fork.toggleVid = () => {
   for (const index in localStream.getVideoTracks()) {
