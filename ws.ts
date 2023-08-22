@@ -15,7 +15,7 @@ let peers: Record<string, Record<string, TAny | WebSocket>> = {};
 function validatePeers(room: string){
   if(peers[room]){
     if(!peers[room]?.participants) peers[room]["participants"] = {}
-    if(!peers[room]?.password) peers[room]["password"] = ""
+    if(peers[room]?.password === undefined) peers[room]["password"] = ""
     if(!peers[room]?.creator) peers[room]["creator"] = ""
     if(!peers[room]?.chat) peers[room]["chat"] = []
   }
@@ -198,7 +198,7 @@ const handler: Handler = ({ request, user }) => {
 export const wsLogin: Handler = ({ body }) => {
   const { user_id, room, password } = body;
 
-  if (peers[room]) {
+  if (peers[room]?.participants) {
     validatePeers(room)
     if (!peers[room]["participants"]) {
       delete peers[room];
@@ -208,7 +208,7 @@ export const wsLogin: Handler = ({ body }) => {
       // delete peers[room]["participants"][user_id];
     }
 
-    if (peers[room]?.password && password && peers[room]["password"] !== password) {
+    if (password && peers[room]["password"] !== password) {
       throw new HttpError(401, "Wrong password");
     }
 
@@ -256,7 +256,7 @@ export const joinRoom: Handler = ({ body }) => {
     }
 
     validatePeers(room)
-    
+
     if (!peers[room]["participants"][user_id]) {
       delete peers[room]["participants"][user_id];
     }

@@ -59,7 +59,7 @@ function updateVideoQuality(
   downlinkMbps = navigator.connection.downlink
 ) {
   console.log("updateVideoQuality");
-  constraints.audio = audioEnabled
+  constraints.audio = audioEnabled;
   switch (context) {
     case "1:1":
       if (downlinkMbps >= 2) {
@@ -382,26 +382,34 @@ fork.removeLocalStream = () => {
 
 fork.toggleMute = () => {
   for (const index in localStream.getAudioTracks()) {
-    localStream.getAudioTracks()[index].enabled =
-      !localStream.getAudioTracks()[index].enabled;
+    localStream.getAudioTracks()[index].enabled = !localStream.getAudioTracks()[index].enabled;
 
-    audioEnabled = localStream.getAudioTracks()[index].enabled
-    if (!audioEnabled) {
-      // Jika audio sedang diaktifkan, hentikan track
-      localStream.getAudioTracks()[index].stop();
-      muteButton.innerText = "Muted";
-    } else {
+    audioEnabled = localStream.getAudioTracks()[index].enabled;
       updateVideoQuality()
+      if (!audioEnabled) {
+      // Jika audio sedang diaktifkan, hentikan track
+      // localStream.getAudioTracks()[index].stop();
+      localStream.getAudioTracks()[index].applyConstraints(constraints).then((audioStream) => {
+        muteButton.innerText = "Muted";
+        //     const audioTrack = audioStream.getAudioTracks()[0];
+        // localStream.addTrack(audioStream);
+      })
+    } else {
+      // localStream.getAudioTracks()[index].applyConstraints(constraints).then((audioStream) => {
+      //     muteButton.innerText = "Unmuted";
+      //     //     const audioTrack = audioStream.getAudioTracks()[0];
+      //     // localStream.addTrack(audioStream);
+      // })
       // refreshStreamWithNewConstraints()
-
       // Jika audio sedang dimatikan, aktifkan kembali
-      navigator.mediaDevices
-        .getUserMedia(constraints)
-        .then(function (audioStream) {
-          const audioTrack = audioStream.getAudioTracks()[0];
-          localStream.addTrack(audioTrack);
-          muteButton.innerText = "Unmuted";
-        });
+      // navigator.mediaDevices
+      //   .getUserMedia({audio: true})
+      //   .then(function (audioStream) {
+      //     const audioTrack = audioStream.getAudioTracks()[0];
+      //     localStream.addTrack(audioTrack);
+      // muteButton.innerText = "Unmuted";
+      //   });
+      muteButton.innerText = "Unmuted";
     }
 
     ws.send(
@@ -438,8 +446,8 @@ fork.toggleVid = () => {
       localVideo.srcObject = null;
     } else {
       // Mulai streaming gambar dari perangkat kembali
-      updateVideoQuality()
-      refreshStreamWithNewConstraints()
+      updateVideoQuality();
+      refreshStreamWithNewConstraints();
       // navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
       //   for (const user_id in peers) {
       //     for (const index in peers[user_id].streams[0].getTracks()) {
