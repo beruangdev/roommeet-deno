@@ -45,12 +45,14 @@ const handler: Handler = ({ request, user }) => {
 
   socket.onopen = () => {
     if (!isValidUser(user)) {
+      console.log("errorToken")
       return wsSend(socket, { type: "errorToken", data: {} });
     }
 
     peers[room] = peers[room] || {};
 
     if (password && password !== peers[room]?.password) {
+      console.log("errorPassword", password, peers[room]?.password)
       return wsSend(socket, { type: "errorPassword", data: {} });
     }
 
@@ -190,7 +192,7 @@ export const wsLogin: Handler = ({ body }) => {
       delete peers[room]["participants"][user_id];
     }
 
-    if (peers[room]["password"] && peers[room]["password"] !== password) {
+    if (peers[room]?.password && password && peers[room]["password"] !== password) {
       throw new HttpError(401, "Wrong password");
     }
 
@@ -207,7 +209,7 @@ export const wsLogin: Handler = ({ body }) => {
 
     // Jika password disediakan, tambahkan ke ruangan
     if (password) {
-      peers[room]["password"] = null;
+      peers[room]["password"] = password;
     }
   }
 

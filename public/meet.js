@@ -53,7 +53,6 @@ const constraints = {
   },
 };
 
-updateVideoQuality()
 function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connection.downlink) {
   console.log('updateVideoQuality')
   
@@ -510,7 +509,6 @@ chatForm.onsubmit = (e) => {
 
 if (token) {
   meetElement.style.display = "block";
-  updateVideoQuality();
   navigator.mediaDevices
     .getUserMedia(constraints)
     .then(function (stream) {
