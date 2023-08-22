@@ -2,26 +2,26 @@ import { FC, Helmet, n } from "../deps.ts";
 import Base from "./base.tsx";
 
 const LINKS = [
-  {
-    title: "Repo",
-    href: "https://github.com/herudi/deno-webrtc-video-meet",
-  },
+  // {
+  //   title: "Repo",
+  //   href: "https://github.com/herudi/deno-webrtc-video-meet",
+  // },
   {
     title: "NHttp",
     href: "https://github.com/nhttp/nhttp",
   },
-  {
-    title: "Author",
-    href: "https://github.com/herudi",
-  },
+  // {
+  //   title: "Author",
+  //   href: "https://github.com/herudi",
+  // },
   {
     title: "Deno",
     href: "https://deno.land",
   },
-  {
-    title: "Logo",
-    href: "https://twitter.com/SamipPoudel3",
-  },
+  // {
+  //   title: "Logo",
+  //   href: "https://twitter.com/SamipPoudel3",
+  // },
 ];
 
 const LinkBottom: FC<{
