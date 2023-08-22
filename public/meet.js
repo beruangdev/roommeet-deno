@@ -392,16 +392,16 @@ fork.toggleMute = () => {
       muteButton.innerText = "Muted";
     } else {
       updateVideoQuality()
-      refreshStreamWithNewConstraints()
+      // refreshStreamWithNewConstraints()
 
       // Jika audio sedang dimatikan, aktifkan kembali
-      // navigator.mediaDevices
-      //   .getUserMedia({ audio: true })
-      //   .then(function (audioStream) {
-      //     const audioTrack = audioStream.getAudioTracks()[0];
-      //     localStream.addTrack(audioTrack);
-      //     muteButton.innerText = "Unmuted";
-      //   });
+      navigator.mediaDevices
+        .getUserMedia(constraints)
+        .then(function (audioStream) {
+          const audioTrack = audioStream.getAudioTracks()[0];
+          localStream.addTrack(audioTrack);
+          muteButton.innerText = "Unmuted";
+        });
     }
 
     ws.send(
