@@ -138,8 +138,10 @@ function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connectio
 
 navigator.connection && navigator.connection.addEventListener('change', () => {
   console.log("navigator.connection change", navigator.connection.downlink)
-  updateVideoQuality()
-  refreshStreamWithNewConstraints();
+  if(videoEnabled){
+    updateVideoQuality()
+    refreshStreamWithNewConstraints();
+  }
 });
 
 function refreshStreamWithNewConstraints() {
