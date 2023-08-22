@@ -199,6 +199,7 @@ export const wsLogin: Handler = ({ body }) => {
     if (Object.keys(peers[room]?.participants ?? {}).length >= MAX_USER) {
       throw new HttpError(400, "Room " + room + " full");
     }
+    
   } else {
     // Membuat ruangan baru
     peers[room] = {
