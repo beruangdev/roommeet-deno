@@ -207,7 +207,7 @@ export const wsLogin: Handler = ({ body }) => {
 
     // Jika password disediakan, tambahkan ke ruangan
     if (password) {
-      peers[room]["password"] = undefined;
+      peers[room]["password"] = null;
     }
   }
 
