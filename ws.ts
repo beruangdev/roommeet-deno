@@ -182,7 +182,9 @@ export const wsLogin: Handler = ({ body }) => {
   const { user_id, room, password } = body;
 
   if (peers[room]) {
-    if (peers[room]["participants"][user_id]) {
+    if (!peers[room]["participants"]) {
+      delete peers[room];
+    } else if (peers[room]["participants"][user_id]) {
       throw new HttpError(400, "User " + user_id + " already exist");
     } else {
       delete peers[room]["participants"][user_id];
