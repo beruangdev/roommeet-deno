@@ -55,6 +55,8 @@ const constraints = {
 
 updateVideoQuality()
 function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connection.downlink) {
+  console.log('updateVideoQuality')
+  
   switch (context) {
     case '1:1':
       if (downlinkMbps >= 1.8) {
@@ -145,6 +147,8 @@ navigator.connection && navigator.connection.addEventListener('change', () => {
 });
 
 function refreshStreamWithNewConstraints() {
+  console.log('refreshStreamWithNewConstraints')
+  
   if (localStream) {
     const tracks = localStream.getTracks();
     tracks.forEach(function (track) {
