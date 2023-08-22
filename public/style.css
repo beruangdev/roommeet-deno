@@ -34,10 +34,13 @@ input[type='submit']:hover {
 }
 
 .row {
-  display: grid;
-  grid-template-columns: repeat(var(--col), 1fr);
+  display: flex;
+  /* flex-direction: column; */
+  /* display: grid; */
+  /* grid-template-columns: repeat(var(--col), 1fr); */
 }
 .container {
+  width: 50%;
   position: relative;
   background-color: #00000044;
 }
