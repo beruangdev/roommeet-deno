@@ -13,9 +13,9 @@ const isDev = window.__DEV__ ?? false;
 
 fork.logout = () => {
   localStorage.removeItem("meet_token");
-  // setTimeout(() => {
-  //   window.location.href = "./";
-  // }, 300);
+  setTimeout(() => {
+    window.location.href = "./";
+  }, 300);
 };
 
 fork.openChat = () => {
@@ -52,7 +52,7 @@ const constraints = {
     frameRate: { ideal: 24, max: 40 }
   },
 };
-
+updateVideoQuality()
 function updateVideoQuality (context = '1:1', downlinkMbps = navigator.connection.downlink) {
   console.log('updateVideoQuality')
   
