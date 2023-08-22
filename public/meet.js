@@ -282,6 +282,8 @@ async function addPeer(user_id, am_initiator) {
     newVid.playsinline = false;
     newVid.autoplay = true;
     newVid.className = "vid";
+    newVid.setAttribute("id", user_id);
+
     newVid.onclick = () => openPictureMode(newVid, user_id);
     newVid.ontouchstart = () => openPictureMode(newVid, user_id);
 
