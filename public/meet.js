@@ -1,5 +1,3 @@
-// import { iceServers } from "./stunServers.js";
-
 const fork = window;
 const meetElement = document.getElementById("meet");
 const chatInput = document.getElementById("chatInput");
@@ -153,16 +151,16 @@ function refreshStreamWithNewConstraints() {
   }
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
     for (const user_id in peers) {
-      for (const index in peers[user_id].streams[0].getTracks()) {
+      for (const index in peers[user_id].socket.streams[0].getTracks()) {
         for (const index2 in stream.getTracks()) {
           if (
-            peers[user_id].streams[0].getTracks()[index].kind ===
+            peers[user_id].socket.streams[0].getTracks()[index].kind ===
             stream.getTracks()[index2].kind
           ) {
-            peers[user_id].replaceTrack(
-              peers[user_id].streams[0].getTracks()[index],
+            peers[user_id].socket.replaceTrack(
+              peers[user_id].socket.streams[0].getTracks()[index],
               stream.getTracks()[index2],
-              peers[user_id].streams[0]
+              peers[user_id].socket.streams[0]
             );
             break;
           }
@@ -214,9 +212,10 @@ function init(token, stream) {
           data,
         })
       );
-    } else if (type === "userStatus") {
-      const { user_id, status } = data.data;
-      console.log("userStatus", user_id, status);
+    } else if (type === "signal") peers[data.user_id].socket.signal(data.signal);
+    else if (type === "userStatus") {
+      // const { user_id, status } = data;
+      // console.log("userStatus", data);
       // TODO: update user status
     } else if (type === "opening") {
       localVideo.srcObject = stream;
@@ -226,18 +225,17 @@ function init(token, stream) {
       document.getElementById("me").innerHTML = `Me: ${info.user_id}`;
     } else if (type === "initSend") addPeer(data.user_id, true);
     else if (type === "removePeer") removePeer(data.user_id);
-    else if (type === "signal") peers[data.user_id].signal(data.signal);
     else if (type === "full") alert("Room FULL");
     else if (type === "errorToken") fork.logout();
     else if (type === "errorPassword") fork.logout();
     else if (type === "closeRoom") fork.logout();
-    else if (type === "toggleVideo") {
+    else if (type === "toggleVideoeo") {
       const opacity = data.videoEnabled ? 1 : 0;
       document.querySelector(`video[id="${data.user_id}"]`).style.opacity =
         opacity;
-    } else if (type === "toggleMute") {
+    } else if (type === "toggleSound") {
       const { user_id, soundEnabled } = data;
-      console.log("toggleMute", user_id, soundEnabled);
+      console.log("toggleSound", user_id, soundEnabled);
       // TODO: toggle sound
     } else if (type === "chat") {
       chatMessage.innerHTML += `
@@ -260,7 +258,7 @@ function removePeer(user_id) {
     videoEl.srcObject = null;
     videos.removeChild(colEl);
   }
-  if (peers[user_id]) peers[user_id].destroy();
+  if (peers[user_id]) peers[user_id].socket.destroy();
 
   document.querySelector(`[data-user_id="${user_id}"]`).remove();
   delete peers[user_id];
@@ -270,14 +268,15 @@ async function addPeer(user_id, am_initiator) {
   const configuration = {
     iceServers: iceServers,
   };
+  if (!peers[user_id]) peers[user_id] = {}
 
-  peers[user_id] = new SimplePeer({
+  peers[user_id].socket = new SimplePeer({
     initiator: am_initiator,
     stream: localStream,
     config: configuration,
   });
 
-  peers[user_id].on("signal", (data) => {
+  peers[user_id].socket.on("signal", (data) => {
     ws.send(
       JSON.stringify({
         type: "signal",
@@ -289,7 +288,7 @@ async function addPeer(user_id, am_initiator) {
     );
   });
 
-  peers[user_id].on("stream", (stream) => {
+  peers[user_id].socket.on("stream", (stream) => {
     // col
     const col = document.createElement("col");
     col.user_id = "col-" + user_id;
@@ -314,6 +313,24 @@ async function addPeer(user_id, am_initiator) {
     user.innerHTML = user_id;
     col.append(newVid, user);
     videos.appendChild(col);
+
+    // Mendeteksi perubahan dalam stream audio
+    const audioContext = new AudioContext();
+    const audioSource = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    audioSource.connect(analyser);
+
+    analyser.fftSize = 2048;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    analyser.getByteTimeDomainData(dataArray);
+
+    const hasSound = dataArray.some((value) => value !== 128);
+
+    if (hasSound) {
+      peers[user_id].lastSoundTimestamp = Date.now();
+    }
+    // Mendeteksi perubahan dalam stream audio END
   });
 }
 function openPictureMode(el, user_id) {
@@ -338,16 +355,16 @@ fork.switchMedia = () => {
   localVideo.srcObject = null;
   navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
     for (const user_id in peers) {
-      for (const index in peers[user_id].streams[0].getTracks()) {
+      for (const index in peers[user_id].socket.streams[0].getTracks()) {
         for (const index2 in stream.getTracks()) {
           if (
-            peers[user_id].streams[0].getTracks()[index].kind ===
+            peers[user_id].socket.streams[0].getTracks()[index].kind ===
             stream.getTracks()[index2].kind
           ) {
-            peers[user_id].replaceTrack(
-              peers[user_id].streams[0].getTracks()[index],
+            peers[user_id].socket.replaceTrack(
+              peers[user_id].socket.streams[0].getTracks()[index],
               stream.getTracks()[index2],
-              peers[user_id].streams[0]
+              peers[user_id].socket.streams[0]
             );
             break;
           }
@@ -363,16 +380,16 @@ fork.switchMedia = () => {
 fork.shareScreen = () => {
   navigator.mediaDevices.getDisplayMedia().then((stream) => {
     for (const user_id in peers) {
-      for (const index in peers[user_id].streams[0].getTracks()) {
+      for (const index in peers[user_id].socket.streams[0].getTracks()) {
         for (const index2 in stream.getTracks()) {
           if (
-            peers[user_id].streams[0].getTracks()[index].kind ===
+            peers[user_id].socket.streams[0].getTracks()[index].kind ===
             stream.getTracks()[index2].kind
           ) {
-            peers[user_id].replaceTrack(
-              peers[user_id].streams[0].getTracks()[index],
+            peers[user_id].socket.replaceTrack(
+              peers[user_id].socket.streams[0].getTracks()[index],
               stream.getTracks()[index2],
-              peers[user_id].streams[0]
+              peers[user_id].socket.streams[0]
             );
             break;
           }
@@ -403,7 +420,7 @@ fork.removeLocalStream = () => {
   }
 };
 
-fork.toggleMute = () => {
+fork.toggleSound = () => {
   for (const index in localStream.getAudioTracks()) {
     localStream.getAudioTracks()[index].enabled =
       !localStream.getAudioTracks()[index].enabled;
@@ -411,37 +428,19 @@ fork.toggleMute = () => {
     audioEnabled = localStream.getAudioTracks()[index].enabled;
     updateVideoQuality();
     if (!audioEnabled) {
-      // Jika audio sedang diaktifkan, hentikan track
-      // localStream.getAudioTracks()[index].stop();
       localStream
         .getAudioTracks()
         [index].applyConstraints(constraints)
         .then((_audioStream) => {
           muteButton.innerText = "Muted";
-          //     const audioTrack = audioStream.getAudioTracks()[0];
-          // localStream.addTrack(audioStream);
         });
     } else {
-      // localStream.getAudioTracks()[index].applyConstraints(constraints).then((audioStream) => {
-      //     muteButton.innerText = "Unmuted";
-      //     //     const audioTrack = audioStream.getAudioTracks()[0];
-      //     // localStream.addTrack(audioStream);
-      // })
-      // refreshStreamWithNewConstraints()
-      // Jika audio sedang dimatikan, aktifkan kembali
-      // navigator.mediaDevices
-      //   .getUserMedia({audio: true})
-      //   .then(function (audioStream) {
-      //     const audioTrack = audioStream.getAudioTracks()[0];
-      //     localStream.addTrack(audioTrack);
-      // muteButton.innerText = "Unmuted";
-      //   });
       muteButton.innerText = "Unmuted";
     }
 
     ws.send(
       JSON.stringify({
-        type: "toggleMute",
+        type: "toggleSound",
         data: {
           soundEnabled: localStream.getAudioTracks()[index].enabled,
         },
@@ -450,7 +449,7 @@ fork.toggleMute = () => {
   }
 };
 
-fork.toggleVid = () => {
+fork.toggleVideo = () => {
   for (const index in localStream.getVideoTracks()) {
     localStream.getVideoTracks()[index].enabled =
       !localStream.getVideoTracks()[index].enabled;
@@ -460,7 +459,7 @@ fork.toggleVid = () => {
 
     ws.send(
       JSON.stringify({
-        type: "toggleVideo",
+        type: "toggleVideoeo",
         data: {
           videoEnabled,
         },
@@ -475,28 +474,6 @@ fork.toggleVid = () => {
       // Mulai streaming gambar dari perangkat kembali
       updateVideoQuality();
       refreshStreamWithNewConstraints();
-      // navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-      //   for (const user_id in peers) {
-      //     for (const index in peers[user_id].streams[0].getTracks()) {
-      //       for (const index2 in stream.getTracks()) {
-      //         if (
-      //           peers[user_id].streams[0].getTracks()[index].kind ===
-      //           stream.getTracks()[index2].kind
-      //         ) {
-      //           peers[user_id].replaceTrack(
-      //             peers[user_id].streams[0].getTracks()[index],
-      //             stream.getTracks()[index2],
-      //             peers[user_id].streams[0]
-      //           );
-      //           break;
-      //         }
-      //       }
-      //     }
-      //   }
-      //   localStream = stream;
-      //   localVideo.srcObject = stream;
-      //   updateButtons();
-      // });
     }
   }
 };
@@ -547,7 +524,9 @@ chatForm.onsubmit = (e) => {
 };
 
 if (token) {
+  updateVideoQuality()
   meetElement.style.display = "block";
+
   navigator.mediaDevices
     .getUserMedia(constraints)
     .then(function (stream) {

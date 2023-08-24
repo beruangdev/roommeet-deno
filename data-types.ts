@@ -2,7 +2,13 @@ export type User = {
   user_id: string;
   room: string;
   password?: string;
-};
+  videoEnabled: boolean;
+  soundEnabled: boolean;
+  trackParticipantTimelineEnabled: boolean;
+  trackParticipantCamTimelineEnabled: boolean;
+  trackParticipantFaceTimelineEnabled: boolean;
+  lobbyEnabled: boolean;
+}
 
 export type WsMessage =
   | { type: "errorToken"; data: Record<string | number | symbol, never> }
@@ -18,7 +24,7 @@ export type WsMessage =
   | { type: "initSend"; data: { user_id: string } }
   | { type: "chat"; data: { user_id: string; message: string } }
   | { type: "toggleVideo"; data: { user_id: string; videoEnabled: boolean } }
-  | { type: "toggleMute"; data: { user_id: string; soundEnabled: boolean } };
+  | { type: "toggleSound"; data: { user_id: string; soundEnabled: boolean } };
 
 export type ParticipantData = {
   socket: WebSocket | null;
@@ -29,11 +35,17 @@ export type ParticipantData = {
   }[];
 };
 
-export interface Room {
+export type Room = {
   creator: string;
   participants: Record<string, ParticipantData>;
   chats: { user_id: string; message: string }[];
   password?: string;
-  createdAt: number;
   lastActiveAt: number;
+  videoEnabled: boolean;
+  soundEnabled: boolean;
+  trackParticipantTimelineEnabled: boolean;
+  trackParticipantCamTimelineEnabled: boolean;
+  trackParticipantFaceTimelineEnabled: boolean;
+  lobbyEnabled: boolean;
+  createdAt: number;
 }
