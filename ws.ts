@@ -277,7 +277,7 @@ const handler: Handler = ({ request, user }) => {
           });
           broadcastToOthers(user.room, user.user_id, {
             type: "chat",
-            data: { user_id: user.user_id, message: data.message },
+            data: { user_id: user.user_id, ...data },
           });
           break;
 
@@ -289,7 +289,7 @@ const handler: Handler = ({ request, user }) => {
           */
           broadcastToOthers(user.room, user.user_id, {
             type: "toggleVideo",
-            data: { user_id: user.user_id, videoEnabled: data.videoEnabled },
+            data: { user_id: user.user_id, ...data},
           });
           break;
 
@@ -301,7 +301,7 @@ const handler: Handler = ({ request, user }) => {
           */
           broadcastToOthers(user.room, user.user_id, {
             type: "toggleSound",
-            data: { user_id: user.user_id, soundEnabled: data.soundEnabled },
+            data: { user_id: user.user_id, ...data },
           });
           break;
 
