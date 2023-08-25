@@ -1,4 +1,5 @@
 export { HttpError, nhttp } from "https://deno.land/x/nhttp@1.3.7/mod.ts";
+export { cors } from "https://deno.land/x/nhttp@1.3.7/lib/cors.ts";
 export type { Handler } from "https://deno.land/x/nhttp@1.3.7/mod.ts";
 export { serveStatic } from "https://deno.land/x/nhttp@1.3.7/lib/serve-static.ts";
 export {

@@ -1,4 +1,4 @@
-import { n, nhttp, renderToHtml, serveStatic } from "./deps.ts";
+import { n, nhttp, renderToHtml, serveStatic, cors } from "./deps.ts";
 import Home from "./components/home.tsx";
 import Meet from "./components/meet.tsx";
 import { wsHandlers, wsLogin, joinRoom, createRoom,getRoom, getPeers, resetPeers } from "./ws.ts";
@@ -11,7 +11,7 @@ const isDev : boolean = ARGS.includes("--dev");
 const app = nhttp();
 
 app.use("/assets", serveStatic("public"));
-
+app.use(cors());
 app.engine(renderToHtml);
 
 app.post("/api/join-or-create", wsLogin);

@@ -7,7 +7,7 @@ import {
 import type { Room, User, WsMessage } from "./data-types.ts";
 
 let peers: Record<string, Room> = {
-  "dev": {
+  "1-dev": {
     creator: "admin@local.com",
     participants: {
       "admin@local.com": {
@@ -112,17 +112,14 @@ const isValidUser: (user: User) => boolean = (user: User): boolean =>
 const broadcastToOthers: (
   room: string,
   user_id: string,
-  message: WsMessage,
-) => void = (
-  room: string,
-  user_id: string,
-  message: WsMessage,
-): void => {
-  for (
-    const [peerId, data] of Object.entries(peers[room]?.participants || {})
-  ) {
+  message: WsMessage
+) => void = (room: string, user_id: string, message: WsMessage): void => {
+  for (const [peerId, data] of Object.entries(
+    peers[room]?.participants || {}
+  )) {
     if (
-      peerId !== user_id && data.socket &&
+      peerId !== user_id &&
+      data.socket &&
       data.socket.readyState === WebSocket.OPEN
     ) {
       wsSend(data.socket, message);
@@ -153,7 +150,7 @@ const middleware: Handler = (rev, next) => {
 
 const validateRoomAccess: (user: User, socket: WebSocket) => void = (
   user: User,
-  socket: WebSocket,
+  socket: WebSocket
 ) => {
   ensureRoomExists(user.room);
   if (!isValidUser(user)) {
@@ -172,6 +169,32 @@ const validateRoomAccess: (user: User, socket: WebSocket) => void = (
 
 const handler: Handler = ({ request, user }) => {
   const { socket, response } = Deno.upgradeWebSocket(request);
+
+  if (request.headers.get("host").startsWith("localhost")) {
+    if (!peers[user.room]) {
+      peers[user.room] = {
+        creator: "",
+        participants: {},
+        chats: [],
+        password: undefined,
+        videoEnabled: false,
+        soundEnabled: false,
+        trackParticipantTimelineEnabled: false,
+        trackParticipantCamTimelineEnabled: false,
+        trackParticipantFaceTimelineEnabled: false,
+        lobbyEnabled: false,
+        createdAt: Date.now(),
+        lastActiveAt: Date.now(),
+      };
+    }
+    if (!peers[user.room].participants[user.user_id]) {
+      peers[user.room].participants[user.user_id] = {
+        socket: null,
+        status: "offline",
+        sessions: [],
+      };
+    }
+  }
 
   socket.onopen = () => {
     try {
@@ -223,7 +246,7 @@ const handler: Handler = ({ request, user }) => {
             {
               type: "signal",
               data: { user_id: user.user_id, signal: data.signal },
-            },
+            }
           );
           break;
 
@@ -238,7 +261,7 @@ const handler: Handler = ({ request, user }) => {
             {
               type: "initSend",
               data: { user_id: user.user_id },
-            },
+            }
           );
           break;
 
@@ -298,6 +321,7 @@ const handler: Handler = ({ request, user }) => {
       peers[user.room].participants[user.user_id].status = "offline";
     }
 
+    // console.log("🚀 ~ file: ws.ts:299 ~ peers[user.room]:", peers[user.room])
     const currentSession =
       peers[user.room].participants[user.user_id].sessions.slice(-1)[0];
     if (currentSession && !currentSession.endTime) {
@@ -324,13 +348,17 @@ function generateToken(body: any): string {
   return base64Encode(JSON.stringify(body));
 }
 
-function validateRoomAndUser(
-  { room, user_id }: { room: string; user_id: string },
-): void {
+function validateRoomAndUser({
+  room,
+  user_id,
+}: {
+  room: string;
+  user_id: string;
+}): void {
   if (!room || !user_id) {
     throw new HttpError(
       400,
-      "Room name or user identifier is missing from request body",
+      "Room name or user identifier is missing from request body"
     );
   }
 }
@@ -340,9 +368,20 @@ const doesRoomExist = (room: string): boolean => !!peers[room];
 
 // Helper function to check if a user is a participant in a room
 
-export const joinRoom: Handler<
-  { body: { room: string; password?: string | undefined; user_id: string } }
-> = ({ body }) => {
+export const joinRoom: Handler<{
+  body: { room: string; password?: string | undefined; user_id: string };
+}> = (rev) => {
+  if (
+    !rev.headers.get("host").startsWith("localhost") &&
+    !["http://localhost:8000", "https://roommeet.com"].includes(
+      rev.headers.get("origin")
+    )
+  ) {
+    // rev.headers.host = "roommeet-1.deno.dev";
+    throw new HttpError(401, "Unauthorized");
+  }
+
+  const { body } = rev;
   const { room, password, user_id } = body;
   validateRoomAndUser(body);
   ensureRoomExists(room);
@@ -405,10 +444,10 @@ export const createRoom: Handler<{ body: User }> = ({ body }) => {
     videoEnabled: videoEnabled || false,
     soundEnabled: soundEnabled || false,
     trackParticipantTimelineEnabled: trackParticipantTimelineEnabled || false,
-    trackParticipantCamTimelineEnabled: trackParticipantCamTimelineEnabled ||
-      false,
-    trackParticipantFaceTimelineEnabled: trackParticipantFaceTimelineEnabled ||
-      false,
+    trackParticipantCamTimelineEnabled:
+      trackParticipantCamTimelineEnabled || false,
+    trackParticipantFaceTimelineEnabled:
+      trackParticipantFaceTimelineEnabled || false,
     lobbyEnabled: lobbyEnabled || false,
     createdAt: Date.now(),
     lastActiveAt: Date.now(),

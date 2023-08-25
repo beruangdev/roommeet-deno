@@ -56,7 +56,6 @@ function updateVideoQuality(
   context = "1:1",
   downlinkMbps = navigator.connection.downlink
 ) {
-  console.log("updateVideoQuality");
   constraints.audio = audioEnabled;
   switch (context) {
     case "1:1":
@@ -126,13 +125,10 @@ function updateVideoQuality(
       console.error("Invalid context provided");
       return null;
   }
-
-  console.log("constraints", constraints);
 }
 
 navigator.connection &&
   navigator.connection.addEventListener("change", () => {
-    console.log("navigator.connection change", navigator.connection.downlink);
     if (videoEnabled) {
       updateVideoQuality();
       refreshStreamWithNewConstraints();
@@ -140,8 +136,6 @@ navigator.connection &&
   });
 
 function refreshStreamWithNewConstraints() {
-  console.log("refreshStreamWithNewConstraints");
-
   if (localStream) {
     const tracks = localStream.getTracks();
     tracks.forEach(function (track) {
@@ -183,7 +177,7 @@ function init(token, stream) {
 
   // Menangani ketika koneksi WebSocket berhasil dibuka
   ws.onopen = function (event) {
-    console.log("WebSocket Connected:", event);
+    console.info("WebSocket Connected:", event);
   };
 
   ws.onerror = function (event) {
@@ -193,7 +187,7 @@ function init(token, stream) {
 
   ws.onclose = (event) => {
     if (event.wasClean) {
-      console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
+      console.info(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
     } else {
       console.error("Connection died"); // misalnya, "kill" atau "lost" tanpa penutupan bersih
     }
@@ -204,6 +198,8 @@ function init(token, stream) {
   };
   ws.onmessage = async (e) => {
     const { type, data } = JSON.parse(e.data);
+    console.info('onmessage', type, data);
+    
     if (type === "initReceive") {
       await addPeer(data.user_id, false);
       ws.send(
@@ -212,10 +208,10 @@ function init(token, stream) {
           data,
         })
       );
-    } else if (type === "signal") peers[data.user_id].socket.signal(data.signal);
+    } else if (type === "signal")
+      peers[data.user_id].socket.signal(data.signal);
     else if (type === "userStatus") {
       // const { user_id, status } = data;
-      // console.log("userStatus", data);
       // TODO: update user status
     } else if (type === "opening") {
       localVideo.srcObject = stream;
@@ -229,7 +225,7 @@ function init(token, stream) {
     else if (type === "errorToken") fork.logout();
     else if (type === "errorPassword") fork.logout();
     else if (type === "closeRoom") fork.logout();
-    else if (type === "toggleVideoeo") {
+    else if (type === "toggleVideo") {
       const opacity = data.videoEnabled ? 1 : 0;
       document.querySelector(`video[id="${data.user_id}"]`).style.opacity =
         opacity;
@@ -268,7 +264,7 @@ async function addPeer(user_id, am_initiator) {
   const configuration = {
     iceServers: iceServers,
   };
-  if (!peers[user_id]) peers[user_id] = {}
+  if (!peers[user_id]) peers[user_id] = {};
 
   peers[user_id].socket = new SimplePeer({
     initiator: am_initiator,
@@ -459,7 +455,7 @@ fork.toggleVideo = () => {
 
     ws.send(
       JSON.stringify({
-        type: "toggleVideoeo",
+        type: "toggleVideo",
         data: {
           videoEnabled,
         },
@@ -524,7 +520,7 @@ chatForm.onsubmit = (e) => {
 };
 
 if (token) {
-  updateVideoQuality()
+  updateVideoQuality();
   meetElement.style.display = "block";
 
   navigator.mediaDevices
