@@ -453,7 +453,7 @@ export const joinRoom: Handler<{
   }
 
   // TODO: DEVELOP
-  if (rev.headers.get("host").startsWith("localhost")) {
+  if (rev.headers.get("host").startsWith("localhost") || true) {
     if (!peers[room].password && password) {
       peers[room].password = password;
     }
