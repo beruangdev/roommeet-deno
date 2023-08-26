@@ -401,15 +401,16 @@ export const joinRoom: Handler<{
     creator: boolean;
   };
 }> = (rev) => {
-  if (
-    !rev.headers.get("host").startsWith("localhost") &&
-    !["http://localhost:8000", "https://roommeet.com"].includes(
-      rev.headers.get("origin")
-    )
-  ) {
-    // rev.headers.host = "roommeet-1.deno.dev";
-    throw new HttpError(401, "Unauthorized");
-  }
+  // TODO: DEVELOP
+  // if (
+  //   !rev.headers.get("host").startsWith("localhost") &&
+  //   !["http://localhost:8000", "https://roommeet.com"].includes(
+  //     rev.headers.get("origin")
+  //   )
+  // ) {
+  //   // rev.headers.host = "roommeet-1.deno.dev";
+  //   throw new HttpError(401, "Unauthorized");
+  // }
 
   const { body } = rev;
   const {
