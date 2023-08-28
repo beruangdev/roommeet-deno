@@ -1,6 +1,6 @@
 // rafactor kode fungsi handler, dan tulis dengan lengkap !!!
 // ws.controller.ts
-import { BodyProp, WsMessageProp } from "./data-types.ts";
+import { TokenDataProp, WsMessageProp } from "./data-types.ts";
 import { Handler, HttpError } from "./deps.ts";
 import PeerStore from "./peersStore.ts";
 
@@ -16,13 +16,14 @@ const peerStore = PeerStore.getInstance();
 
 const handler: Handler = (rev) => {
   const request = rev.request;
-  const body = rev.body as BodyProp;
+  const body = rev.body as TokenDataProp;
   const { socket, response } = Deno.upgradeWebSocket(request);
 
   socket.onopen = () => {
     try {
       updateRoomActivity(body.room_uuid);
       validateRoomAccess(body, socket);
+
       const room = peerStore.getRoom(body.room_uuid);
       wsSend(socket, {
         type: "opening",
@@ -37,7 +38,7 @@ const handler: Handler = (rev) => {
         body.room_uuid,
         body.user_uuid,
       );
-      if (participant && !participant.socket) {
+      if (participant) {
         participant.socket = socket;
         participant.status = "online";
         participant.timelines.push({ start_at: Date.now() });

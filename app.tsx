@@ -4,12 +4,10 @@ import Meet from "./components/meet.tsx";
 import { RequestEvent, TObject } from "https://deno.land/x/nhttp@1.3.7/mod.ts";
 import { NHttp } from "https://deno.land/x/nhttp@1.3.7/index.ts";
 import {
-  createRoom,
   getPeers,
   getRoom,
-  joinRoom,
+  joinOrCreateRoom,
   resetPeers,
-  wsLogin,
 } from "./room.controller.ts";
 import { wsHandlers } from "./ws.controller.ts";
 
@@ -22,9 +20,7 @@ app.use("/assets", serveStatic("public"));
 app.use(cors());
 app.engine(renderToHtml);
 
-app.post("/api/join-or-create", wsLogin);
-app.post("/api/create", createRoom);
-app.post("/api/join", joinRoom);
+app.post("/api/join-or-create", joinOrCreateRoom);
 app.get("/peers", getPeers);
 app.post("/test-speed", (rev) => {
   rev.response.status(200).send({

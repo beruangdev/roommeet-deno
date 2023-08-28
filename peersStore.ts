@@ -25,14 +25,23 @@ class PeerStore {
     }
   }
 
+  getPeers(): Record<string, RoomProp> {
+    return this.peers;
+  }
+
+  resetPeers(): Record<string, RoomProp> {
+    this.peers = {};
+    return this.peers;
+  }
+
   cleanupRooms(): void {
     const currentTimestamp = Date.now();
     const day = 24 * 60 * 60 * 1000;
     for (const room_uuid in this.peers) {
       const room: RoomProp = this.peers[room_uuid];
       if (
-        room.updatedAt &&
-        currentTimestamp - room.updatedAt > day * this.maxRoomNotActive
+        room.updated_at &&
+        currentTimestamp - room.updated_at > day * this.maxRoomNotActive
       ) {
         this.removeRoom(room_uuid);
         this.log(
@@ -42,8 +51,8 @@ class PeerStore {
       }
 
       if (
-        room.createdAt &&
-        currentTimestamp - room.createdAt > day * this.maxRoomLife
+        room.created_at &&
+        currentTimestamp - room.created_at > day * this.maxRoomLife
       ) {
         this.removeRoom(room_uuid);
         this.log(
@@ -53,16 +62,17 @@ class PeerStore {
     }
   }
   // Operasi CRUD untuk Room
-  addRoom(room_uuid: string, room: RoomProp): void {
+  addRoom(room_uuid: string, room: RoomProp): RoomProp {
     this.log(`Menambahkan room dengan kunci ${room_uuid}`);
     const now = Date.now();
     this.peers = {
       ...this.peers,
-      [room_uuid]: { ...room, createdAt: now, updatedAt: now },
+      [room_uuid]: { ...room, created_at: now, updated_at: now },
     };
+    return this.peers[room_uuid];
   }
 
-  updateRoom(room_uuid: string, updatedRoom: Partial<RoomProp>): void {
+  updateRoom(room_uuid: string, updatedRoom: Partial<RoomProp>): RoomProp {
     if (this.peers[room_uuid]) {
       this.log(`Memperbarui room dengan kunci ${room_uuid}`);
       this.peers = {
@@ -70,12 +80,13 @@ class PeerStore {
         [room_uuid]: {
           ...this.peers[room_uuid],
           ...updatedRoom,
-          updatedAt: Date.now(),
+          updated_at: Date.now(),
         },
       };
     } else {
       throw new Error("Room tidak ditemukan");
     }
+    return this.peers[room_uuid];
   }
 
   removeRoom(room_uuid: string): void {
@@ -102,7 +113,7 @@ class PeerStore {
   addParticipant(
     room_uuid: string,
     participant: ParticipantProp,
-  ): void {
+  ): ParticipantProp {
     if (this.peers[room_uuid]) {
       this.log(`Menambahkan participant pada room ${room_uuid}`);
       const now = Date.now();
@@ -114,8 +125,8 @@ class PeerStore {
             ...this.peers[room_uuid].participants,
             [participant.uuid]: {
               ...participant,
-              createdAt: now,
-              updatedAt: now,
+              created_at: now,
+              updated_at: now,
             },
           },
         },
@@ -123,13 +134,15 @@ class PeerStore {
     } else {
       throw new Error("Room tidak ditemukan");
     }
+
+    return this.peers[room_uuid].participants[participant.uuid];
   }
 
   updateParticipant(
     room_uuid: string,
     participant_uuid: string,
     updatedParticipant: Partial<ParticipantProp>,
-  ): void {
+  ): ParticipantProp {
     if (this.peers[room_uuid]?.participants[participant_uuid]) {
       this.log(`Memperbarui participant pada room ${room_uuid}`);
       const updatedParticipants = {
@@ -137,7 +150,7 @@ class PeerStore {
         [participant_uuid]: {
           ...this.peers[room_uuid].participants[participant_uuid],
           ...updatedParticipant,
-          updatedAt: Date.now(),
+          updated_at: Date.now(),
         },
       };
       this.peers = {
@@ -150,6 +163,7 @@ class PeerStore {
     } else {
       throw new Error("Room atau participant tidak ditemukan");
     }
+    return this.peers[room_uuid].participants[participant_uuid];
   }
 
   removeParticipant(room_uuid: string, participant_uuid: string): void {

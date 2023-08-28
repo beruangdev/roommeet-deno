@@ -56,15 +56,10 @@ export const isValidBody: (body: BodyProp) => boolean = (
   return body.user_uuid && body.room_uuid ? true : false;
 };
 
-export const validateRoomAccess: (body: BodyProp, socket: WebSocket) => void = (
-  body: BodyProp,
+export const validateRoomAccess: (body: TokenDataProp, socket: WebSocket) => void = (
+  body: TokenDataProp,
   socket: WebSocket,
 ) => {
-  if (!isValidBody(body)) {
-    wsSend(socket, { type: "errorToken", data: {} });
-    throw new HttpError(400, "Invalid body");
-  }
-
   const room = peerStore.getRoom(body.room_uuid);
   if (room && body.password && body.password !== room.password) {
     wsSend(socket, { type: "errorPassword", data: {} });

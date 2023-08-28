@@ -16,13 +16,14 @@ export const joinOrCreateRoom: Handler<{
   body: BodyProp;
 }> = (rev) => {
   const { body } = rev;
+  console.log("🚀 ~ file: room.controller.ts:19 ~ body:", body);
   validateBody(body);
   updateRoomActivity(body.room_uuid);
 
   let room = peerStore.getRoom(body.room_uuid);
   // jika room tidak ada buatkan room baru
   if (!room) {
-    peerStore.addRoom(body.room_uuid, {
+    room = peerStore.addRoom(body.room_uuid, {
       uuid: body.room_uuid,
       name: body.room_name,
       creator_uuid: body.creator_uuid,
@@ -59,10 +60,34 @@ export const joinOrCreateRoom: Handler<{
       created_at: Date.now(),
       last_active_at: Date.now(),
     });
-
-    room = peerStore.getRoom(body.room_uuid);
   }
 
+  let participant = peerStore.getParticipant(
+    body.room_uuid,
+    body.user_uuid,
+  );
+
+  if (!participant) {
+    participant = peerStore.addParticipant(
+      body.room_uuid,
+      {
+        uuid: body.user_uuid,
+        name: body.user_name,
+        approved: true,
+        is_creator: false,
+        video_enabled: Boolean(body.video_enabled),
+        sound_enabled: Boolean(body.sound_enabled),
+        socket: null,
+        status: "offline",
+        created_at: Date.now(),
+        timelines: [],
+        cam_timelines: [],
+        face_timelines: [],
+      },
+    );
+  }
+
+  room = peerStore.getRoom(body.room_uuid);
   if (room && Object.keys(room.participants).length >= MAX_USER) {
     throw new HttpError(
       400,
@@ -80,13 +105,11 @@ export const joinOrCreateRoom: Handler<{
 };
 
 export const getPeers = () => {
-  // Consider adding a method in PeerStore to return all peers if required.
-  return {};
+  return peerStore.getPeers();
 };
 
 export const resetPeers = () => {
-  // Add logic in PeerStore to reset if required.
-  return {};
+  return peerStore.resetPeers();
 };
 
 export const getRoom: Handler = (rev) => {
