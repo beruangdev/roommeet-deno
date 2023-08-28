@@ -36,16 +36,16 @@ const handler: Handler = (rev) => {
 
       const participant = peerStore.getParticipant(
         body.room_uuid,
-        body.user_uuid,
+        body.user_uuid
       );
       if (participant) {
         participant.socket = socket;
-        participant.status = "online";
+        participant.status = "in_room";
         participant.timelines.push({ start_at: Date.now() });
         peerStore.updateParticipant(
           body.room_uuid,
           participant.uuid,
-          participant,
+          participant
         );
       }
 
@@ -59,7 +59,7 @@ const handler: Handler = (rev) => {
 
       broadcastToOthers(body.room_uuid, body.user_uuid, {
         type: "userStatus",
-        data: { user_uuid: body.user_uuid, status: "online" },
+        data: { user_uuid: body.user_uuid, status: "in_room" },
       });
     } catch (error) {
       console.error(error);
@@ -75,7 +75,7 @@ const handler: Handler = (rev) => {
       }
       const participant = peerStore.getParticipant(
         body.room_uuid,
-        data.user_uuid,
+        data.user_uuid
       );
       const room = peerStore.getRoom(body.room_uuid);
 
@@ -84,28 +84,22 @@ const handler: Handler = (rev) => {
       switch (type) {
         case "signal":
           if (participant) {
-            wsSend(
-              participant.socket as WebSocket,
-              {
-                type: "signal",
-                data: { user_uuid: body.user_uuid, signal: data.signal },
-              },
-            );
+            wsSend(participant.socket as WebSocket, {
+              type: "signal",
+              data: { user_uuid: body.user_uuid, signal: data.signal },
+            });
           }
           break;
 
         case "initSend":
           if (participant) {
-            wsSend(
-              participant.socket as WebSocket,
-              {
-                type: "initSend",
-                data: {
-                  user_uuid: body.user_uuid,
-                  ...peerStore.getParticipant(body.room_uuid, body.user_uuid),
-                },
+            wsSend(participant.socket as WebSocket, {
+              type: "initSend",
+              data: {
+                user_uuid: body.user_uuid,
+                ...peerStore.getParticipant(body.room_uuid, body.user_uuid),
               },
-            );
+            });
           }
           break;
 
@@ -155,20 +149,20 @@ const handler: Handler = (rev) => {
 
     const participant = peerStore.getParticipant(
       body.room_uuid,
-      body.user_uuid,
+      body.user_uuid
     );
     if (participant) {
-      participant.timelines[participant.timelines.length - 1].end_at = Date
-        .now();
+      participant.timelines[participant.timelines.length - 1].end_at =
+        Date.now();
       peerStore.updateParticipant(body.room_uuid, participant.uuid, {
-        status: "offline",
+        status: "left",
         timelines: participant.timelines,
       });
     }
 
     broadcastToOthers(body.room_uuid, body.user_uuid, {
       type: "userStatus",
-      data: { user_uuid: body.user_uuid, status: "offline" },
+      data: { user_uuid: body.user_uuid, status: "left" },
     });
 
     // TODO: pertimpangkan apakah perlu menghapus participant di ws server jika sudah disconnect?

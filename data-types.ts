@@ -29,7 +29,7 @@ export type WsMessageProp =
   | { type: "signal"; data: { user_uuid: string; signal: unknown } }
   | {
       type: "userStatus";
-      data: { user_uuid: string; status: "online" | "offline" };
+      data: { user_uuid: string; status: "in_room" | "in_lobby" | "left" };
     }
   | { type: "toggleVideo"; data: { user_uuid: string; video_enabled: boolean } }
   | { type: "toggleAudio"; data: { user_uuid: string; audio_enabled: boolean } }
@@ -68,7 +68,7 @@ export type ParticipantProp = {
   video_enabled: boolean;
   audio_enabled: boolean;
   socket: WebSocket | null;
-  status: "online" | "offline";
+  status: "in_room" | "in_lobby" | "left";
   timelines: {
     start_at: number;
     end_at?: number;
