@@ -8,7 +8,7 @@ export type BodyProp = {
   creator_uuid: string;
   is_creator: boolean;
   video_enabled: boolean;
-  sound_enabled: boolean;
+  audio_enabled: boolean;
   participant_timeline_enabled: boolean;
   cam_timeline_enabled: boolean;
   face_timeline_enabled: boolean;
@@ -44,7 +44,7 @@ export type RoomProp = {
   creator_uuid: string;
   password?: string;
   video_enabled: boolean;
-  sound_enabled: boolean;
+  audio_enabled: boolean;
   participant_timeline_enabled: boolean;
   cam_timeline_enabled: boolean;
   face_timeline_enabled: boolean;
@@ -66,7 +66,7 @@ export type ParticipantProp = {
   approved: boolean;
   is_creator: boolean;
   video_enabled: boolean;
-  sound_enabled: boolean;
+  audio_enabled: boolean;
   socket: WebSocket | null;
   status: "online" | "offline";
   timelines: {
