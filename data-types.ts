@@ -31,8 +31,8 @@ export type WsMessageProp =
       type: "userStatus";
       data: { user_uuid: string; status: "online" | "offline" };
     }
-  | { type: "toggleVideo"; data: { user_uuid: string; videoEnabled: boolean } }
-  | { type: "toggleAudio"; data: { user_uuid: string; audioEnabled: boolean } }
+  | { type: "toggleVideo"; data: { user_uuid: string; video_enabled: boolean } }
+  | { type: "toggleAudio"; data: { user_uuid: string; audio_enabled: boolean } }
   | { type: "errorToken"; data: Record<string | number | symbol, never> }
   | { type: "errorPassword"; data: Record<string | number | symbol, never> }
   | { type: "full"; data: Record<string | number | symbol, never> }

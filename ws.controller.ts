@@ -127,7 +127,7 @@ const handler: Handler = (rev) => {
             type: "toggleVideo",
             data: {
               user_uuid: data.user_uuid,
-              videoEnabled: data.videoEnabled,
+              video_enabled: data.video_enabled,
             },
           });
           break;
@@ -137,7 +137,7 @@ const handler: Handler = (rev) => {
             type: "toggleAudio",
             data: {
               user_uuid: data.user_uuid,
-              audioEnabled: data.audioEnabled,
+              audio_enabled: data.audio_enabled,
             },
           });
           break;
