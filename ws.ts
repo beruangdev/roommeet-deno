@@ -4,39 +4,20 @@ import {
   decode as base64Decode,
   encode as base64Encode,
 } from "https://deno.land/std@0.199.0/encoding/base64.ts";
-import type { Room, User, WsMessage } from "./data-types.ts";
+import type { BodyProp, RoomProp, WsMessageProp } from "./data-types.ts";
 
-let peers: Record<string, Room> = {
-  // "1-dev": {
-  //   creator: "admin@local.com",
-  //   participants: {
-  //     "admin@local.com": {
-  //       socket: null,
-  //       status: "online",
-  //       sessions: [],
-  //     },
-  //   },
-  //   chats: [],
-  //   password: "123",
-  //   videoEnabled: true,
-  //   soundEnabled: true,
-  //   trackParticipantTimelineEnabled: false,
-  //   trackParticipantCamTimelineEnabled: false,
-  //   trackParticipantFaceTimelineEnabled: false,
-  //   lobbyEnabled: false,
-  //   createdAt: Date.now(),
-  //   lastActiveAt: Date.now(),
-  // },
-};
+let peers: Record<string, RoomProp> = {};
 const MAX_USER = 160;
 
 const isEmptyObject = (obj: Record<string, any>): boolean => {
   return Object.keys(obj).length === 0;
 };
 
-const ensureRoomExists = (room: string): void => {
-  if (!peers[room] || isEmptyObject(peers[room])) {
-    peers[room] = {
+const ensureRoomExists = (room_uuid: string): void => {
+  if (!peers[room_uuid] || isEmptyObject(peers[room_uuid])) {
+    peers[room_uuid] = {
+      uuid: room_uuid,
+      name: "",
       creator: "",
       participants: {},
       chats: [],
@@ -51,71 +32,82 @@ const ensureRoomExists = (room: string): void => {
       lastActiveAt: Date.now(),
     };
   } else {
-    if (!peers[room].creator) peers[room].creator = "";
-    if (!peers[room].participants || isEmptyObject(peers[room].participants)) {
-      peers[room].creator = "";
+    if (!peers[room_uuid].creator) peers[room_uuid].creator = "";
+    if (
+      !peers[room_uuid].participants ||
+      isEmptyObject(peers[room_uuid].participants)
+    ) {
+      peers[room_uuid].creator = "";
     }
-    if (!peers[room].chats || !Array.isArray(peers[room].chats)) {
-      peers[room].chats = [];
+    if (!peers[room_uuid].chats || !Array.isArray(peers[room_uuid].chats)) {
+      peers[room_uuid].chats = [];
     }
-    if (!peers[room].password) peers[room].password = undefined;
-    if (typeof peers[room].videoEnabled !== "boolean") {
-      peers[room].videoEnabled = false;
+    if (!peers[room_uuid].password) peers[room_uuid].password = undefined;
+    if (typeof peers[room_uuid].videoEnabled !== "boolean") {
+      peers[room_uuid].videoEnabled = false;
     }
-    if (typeof peers[room].soundEnabled !== "boolean") {
-      peers[room].soundEnabled = false;
+    if (typeof peers[room_uuid].soundEnabled !== "boolean") {
+      peers[room_uuid].soundEnabled = false;
     }
-    if (typeof peers[room].trackParticipantTimelineEnabled !== "boolean") {
-      peers[room].trackParticipantTimelineEnabled = false;
+    if (typeof peers[room_uuid].trackParticipantTimelineEnabled !== "boolean") {
+      peers[room_uuid].trackParticipantTimelineEnabled = false;
     }
-    if (typeof peers[room].trackParticipantCamTimelineEnabled !== "boolean") {
-      peers[room].trackParticipantCamTimelineEnabled = false;
+    if (
+      typeof peers[room_uuid].trackParticipantCamTimelineEnabled !== "boolean"
+    ) {
+      peers[room_uuid].trackParticipantCamTimelineEnabled = false;
     }
-    if (typeof peers[room].trackParticipantFaceTimelineEnabled !== "boolean") {
-      peers[room].trackParticipantFaceTimelineEnabled = false;
+    if (
+      typeof peers[room_uuid].trackParticipantFaceTimelineEnabled !== "boolean"
+    ) {
+      peers[room_uuid].trackParticipantFaceTimelineEnabled = false;
     }
-    if (typeof peers[room].lobbyEnabled !== "boolean") {
-      peers[room].lobbyEnabled = false;
+    if (typeof peers[room_uuid].lobbyEnabled !== "boolean") {
+      peers[room_uuid].lobbyEnabled = false;
     }
-    if (!peers[room].createdAt) peers[room].createdAt = Date.now();
-    if (!peers[room].lastActiveAt) peers[room].lastActiveAt = Date.now();
+    if (!peers[room_uuid].createdAt) peers[room_uuid].createdAt = Date.now();
+    if (!peers[room_uuid].lastActiveAt) {
+      peers[room_uuid].lastActiveAt = Date.now();
+    }
   }
 };
 
 const checkAndCleanRooms: () => void = (): void => {
   const currentTime: number = Date.now();
 
-  for (const room in peers) {
-    const roomLife = currentTime - peers[room].createdAt;
-    const inactiveDuration = currentTime - peers[room].lastActiveAt;
+  for (const room_uuid in peers) {
+    const roomLife = currentTime - peers[room_uuid].createdAt;
+    const inactiveDuration = currentTime - peers[room_uuid].lastActiveAt;
 
     if (
       roomLife > 7 * 24 * 60 * 60 * 1000 ||
       inactiveDuration > 5 * 24 * 60 * 60 * 1000
     ) {
-      delete peers[room];
+      delete peers[room_uuid];
     }
   }
 };
 
-const updateRoomActivity: (room: string) => void = (room: string) => {
-  if (peers[room]) {
-    peers[room].lastActiveAt = Date.now();
+const updateRoomActivity: (room_uuid: string) => void = (room_uuid: string) => {
+  if (peers[room_uuid]) {
+    peers[room_uuid].lastActiveAt = Date.now();
   }
 };
 
-setInterval(checkAndCleanRooms, 60 * 1000);
-
-const isValidUser: (user: User) => boolean = (user: User): boolean =>
-  user.user_uuid && user.room ? true : false;
+const isValidBody: (body: BodyProp) => boolean = (body: BodyProp): boolean =>
+  body.user_uuid && body.room_uuid ? true : false;
 
 const broadcastToOthers: (
-  room: string,
+  room_uuid: string,
   user_uuid: string,
-  message: WsMessage
-) => void = (room: string, user_uuid: string, message: WsMessage): void => {
+  message: WsMessageProp
+) => void = (
+  room_uuid: string,
+  user_uuid: string,
+  message: WsMessageProp
+): void => {
   for (const [peerId, data] of Object.entries(
-    peers[room]?.participants || {}
+    peers[room_uuid]?.participants || {}
   )) {
     if (
       peerId !== user_uuid &&
@@ -127,11 +119,54 @@ const broadcastToOthers: (
   }
 };
 
-const wsSend = (ws: WebSocket, data: WsMessage): void => {
+const wsSend = (ws: WebSocket, data: WsMessageProp): void => {
   ws.send(JSON.stringify(data));
 };
 
-const tryDecode = (str: string): User => {
+const validateRoomAccess: (body: BodyProp, socket: WebSocket) => void = (
+  body: BodyProp,
+  socket: WebSocket
+) => {
+  ensureRoomExists(body.room_uuid);
+  if (!isValidBody(body)) {
+    wsSend(socket, { type: "errorToken", data: {} });
+    throw new HttpError(400, "Invalid body");
+  }
+  if (body.password && body.password !== peers[body.room_uuid]?.password) {
+    wsSend(socket, { type: "errorPassword", data: {} });
+    throw new HttpError(401, "Wrong password");
+  }
+  if (Object.keys(peers[body.room_uuid].participants).length >= MAX_USER) {
+    wsSend(socket, { type: "full", data: {} });
+    throw new HttpError(400, "RoomProp full");
+  }
+};
+
+function generateToken(body: any): string {
+  return base64Encode(JSON.stringify(body));
+}
+
+function validateRoomAndUser({
+  room_uuid,
+  user_uuid,
+}: {
+  room_uuid: string;
+  user_uuid: string;
+}): void {
+  if (!room_uuid || !user_uuid) {
+    throw new HttpError(
+      400,
+      "RoomProp name or body identifier is missing from request body"
+    );
+  }
+}
+
+// Helper function to check if a room exists
+const doesRoomExist = (room_uuid: string): boolean => !!peers[room_uuid];
+
+setInterval(checkAndCleanRooms, 60 * 1000);
+
+const tryDecode = (str: string): BodyProp => {
   try {
     return JSON.parse(new TextDecoder().decode(base64Decode(str)));
   } catch {
@@ -144,35 +179,20 @@ const middleware: Handler = (rev, next) => {
   if (rev.request.headers.get("upgrade") !== "websocket") {
     throw new HttpError(400, "Protocol not supported");
   }
-  rev.user = tryDecode(rev.params.token);
+  rev.body = tryDecode(rev.params.token);
   return next();
 };
 
-const validateRoomAccess: (user: User, socket: WebSocket) => void = (
-  user: User,
-  socket: WebSocket
-) => {
-  ensureRoomExists(user.room);
-  if (!isValidUser(user)) {
-    wsSend(socket, { type: "errorToken", data: {} });
-    throw new HttpError(400, "Invalid user");
-  }
-  if (user.password && user.password !== peers[user.room]?.password) {
-    wsSend(socket, { type: "errorPassword", data: {} });
-    throw new HttpError(401, "Wrong password");
-  }
-  if (Object.keys(peers[user.room].participants).length >= MAX_USER) {
-    wsSend(socket, { type: "full", data: {} });
-    throw new HttpError(400, "Room full");
-  }
-};
-
-const handler: Handler = ({ request, user }) => {
+const handler: Handler = (rev) => {
+  const request = rev.request;
+  const body = rev.body as BodyProp;
   const { socket, response } = Deno.upgradeWebSocket(request);
 
-  if (request.headers.get("host").startsWith("localhost")) {
-    if (!peers[user.room]) {
-      peers[user.room] = {
+  if (request.headers.get("host")?.startsWith("localhost")) {
+    if (!peers[body.room_uuid]) {
+      peers[body.room_uuid] = {
+        uuid: body.room_uuid,
+        name: "",
         creator: "",
         participants: {},
         chats: [],
@@ -187,60 +207,62 @@ const handler: Handler = ({ request, user }) => {
         lastActiveAt: Date.now(),
       };
     }
-    if (!peers[user.room].participants[user.user_uuid]) {
-      peers[user.room].participants[user.user_uuid] = {
+    if (!peers[body.room_uuid].participants[body.user_uuid]) {
+      peers[body.room_uuid].participants[body.user_uuid] = {
         socket: null,
         status: "offline",
         sessions: [],
-        name: user.user_name,
+        name: body.user_name,
         approved: false,
         creator: false,
-        uuid: user.user_uuid,
+        uuid: body.user_uuid,
         videoEnabled: false,
         soundEnabled: false,
+        camTimeline: [],
+        faceTimeline: [],
       };
     }
   }
 
   socket.onopen = () => {
     try {
-      updateRoomActivity(user.room);
-      validateRoomAccess(user, socket);
+      updateRoomActivity(body.room_uuid);
+      validateRoomAccess(body, socket);
       wsSend(socket, {
         type: "opening",
         data: {
-          room: user.room,
-          user_uuid: user.user_uuid,
-          ...peers[user.room],
+          room_uuid: body.room_uuid,
+          user_uuid: body.user_uuid,
+          ...peers[body.room_uuid],
         },
       });
 
-      if (!peers[user.room].participants[user.user_uuid]?.socket) {
-        peers[user.room].participants[user.user_uuid].socket = null;
+      if (!peers[body.room_uuid].participants[body.user_uuid]?.socket) {
+        peers[body.room_uuid].participants[body.user_uuid].socket = null;
       }
-      peers[user.room].participants[user.user_uuid].socket = socket;
-      peers[user.room].participants[user.user_uuid].status = "online";
-      peers[user.room].participants[user.user_uuid].sessions.push({
+      peers[body.room_uuid].participants[body.user_uuid].socket = socket;
+      peers[body.room_uuid].participants[body.user_uuid].status = "online";
+      peers[body.room_uuid].participants[body.user_uuid].sessions.push({
         startTime: Date.now(),
       });
 
-      // Inform other peers about the user's status and initialization
+      // Inform other peers about the body's status and initialization
       // wsSend(socket, {
       //   type: "initReceive",
-      //   data: { user_uuid: user.user_uuid },
+      //   data: { user_uuid: body.user_uuid },
       // })
 
-      broadcastToOthers(user.room, user.user_uuid, {
+      broadcastToOthers(body.room_uuid, body.user_uuid, {
         type: "initReceive",
         data: {
-          user_uuid: user.user_uuid,
-          ...peers[user.room].participants[user.user_uuid],
+          user_uuid: body.user_uuid,
+          ...peers[body.room_uuid].participants[body.user_uuid],
         },
       });
 
-      broadcastToOthers(user.room, user.user_uuid, {
+      broadcastToOthers(body.room_uuid, body.user_uuid, {
         type: "userStatus",
-        data: { user_uuid: user.user_uuid, status: "online" },
+        data: { user_uuid: body.user_uuid, status: "online" },
       });
     } catch (error) {
       console.error(error);
@@ -250,8 +272,8 @@ const handler: Handler = ({ request, user }) => {
   socket.onmessage = (e) => {
     try {
       const { type, data } = JSON.parse(e.data);
-      ensureRoomExists(user.room);
-      updateRoomActivity(user.room);
+      ensureRoomExists(body.room_uuid);
+      updateRoomActivity(body.room_uuid);
       switch (type) {
         case "signal":
           /*
@@ -260,10 +282,11 @@ const handler: Handler = ({ request, user }) => {
           Tindakan: Pesan diteruskan ke socket dari pengguna tujuan dengan menyesuaikan jenis pesan dan data.
           */
           wsSend(
-            peers[user.room].participants[data.user_uuid].socket as WebSocket,
+            peers[body.room_uuid].participants[data.user_uuid]
+              .socket as WebSocket,
             {
               type: "signal",
-              data: { user_uuid: user.user_uuid, signal: data.signal },
+              data: { user_uuid: body.user_uuid, signal: data.signal },
             }
           );
           break;
@@ -275,12 +298,13 @@ const handler: Handler = ({ request, user }) => {
           Tindakan: Pesan diteruskan ke socket dari pengguna tujuan dengan menyesuaikan jenis pesan dan data.
           */
           wsSend(
-            peers[user.room].participants[data.user_uuid].socket as WebSocket,
+            peers[body.room_uuid].participants[data.user_uuid]
+              .socket as WebSocket,
             {
               type: "initSend",
               data: {
-                user_uuid: user.user_uuid,
-                ...peers[user.room].participants[user.user_uuid],
+                user_uuid: body.user_uuid,
+                ...peers[body.room_uuid].participants[body.user_uuid],
               },
             }
           );
@@ -292,13 +316,13 @@ const handler: Handler = ({ request, user }) => {
 
           Tindakan: Pesan ditambahkan ke obyek chats. Pesan juga di-broadcast ke pengguna lain dalam ruangan menggunakan broadcastToOthers.
           */
-          peers[user.room].chats.push({
-            user_uuid: user.user_uuid,
+          peers[body.room_uuid].chats.push({
+            user_uuid: body.user_uuid,
             message: data.message,
           });
-          broadcastToOthers(user.room, user.user_uuid, {
+          broadcastToOthers(body.room_uuid, body.user_uuid, {
             type: "chat",
-            data: { user_uuid: user.user_uuid, ...data },
+            data: { user_uuid: body.user_uuid, ...data },
           });
           break;
 
@@ -308,9 +332,12 @@ const handler: Handler = ({ request, user }) => {
 
           Tindakan: Perubahan status video pengguna di-broadcast ke pengguna lain dalam ruangan menggunakan broadcastToOthers.
           */
-          broadcastToOthers(user.room, user.user_uuid, {
+          broadcastToOthers(body.room_uuid, body.user_uuid, {
             type: "toggleVideo",
-            data: { user_uuid: data.user_uuid, videoEnabled: data.videoEnabled },
+            data: {
+              user_uuid: data.user_uuid,
+              videoEnabled: data.videoEnabled,
+            },
           });
           break;
 
@@ -320,9 +347,12 @@ const handler: Handler = ({ request, user }) => {
 
           Tindakan: Perubahan status suara pengguna di-broadcast ke pengguna lain dalam ruangan menggunakan broadcastToOthers.
           */
-          broadcastToOthers(user.room, user.user_uuid, {
+          broadcastToOthers(body.room_uuid, body.user_uuid, {
             type: "toggleAudio",
-            data: { user_uuid: data.user_uuid, audioEnabled: data.audioEnabled },
+            data: {
+              user_uuid: data.user_uuid,
+              audioEnabled: data.audioEnabled,
+            },
           });
           break;
 
@@ -335,71 +365,40 @@ const handler: Handler = ({ request, user }) => {
   };
 
   socket.onclose = () => {
-    ensureRoomExists(user.room);
-    updateRoomActivity(user.room);
+    ensureRoomExists(body.room_uuid);
+    updateRoomActivity(body.room_uuid);
 
-    if (peers[user.room].participants[user.user_uuid]) {
-      peers[user.room].participants[user.user_uuid].status = "offline";
+    if (peers[body.room_uuid].participants[body.user_uuid]) {
+      peers[body.room_uuid].participants[body.user_uuid].status = "offline";
     }
 
-    // console.log("🚀 ~ file: ws.ts:299 ~ peers[user.room]:", peers[user.room])
+    // console.log("🚀 ~ file: ws.ts:299 ~ peers[body.room_uuid]:", peers[body.room_uuid])
     const currentSession =
-      peers[user.room].participants[user.user_uuid].sessions.slice(-1)[0];
+      peers[body.room_uuid].participants[body.user_uuid].sessions.slice(-1)[0];
     if (currentSession && !currentSession.endTime) {
       currentSession.endTime = Date.now();
     }
-    // Inform other peers that the current user has disconnected
-    broadcastToOthers(user.room, user.user_uuid, {
+    // Inform other peers that the current body has disconnected
+    broadcastToOthers(body.room_uuid, body.user_uuid, {
       type: "userStatus",
-      data: { user_uuid: user.user_uuid, status: "offline" },
+      data: { user_uuid: body.user_uuid, status: "offline" },
     });
-    // Remove the disconnected user from the participants list
-    // delete peers[user.room].participants[user.user_uuid];
+    // Remove the disconnected body from the participants list
+    // delete peers[body.room_uuid].participants[body.user_uuid];
 
-    // If no participants left in the room, delete the room
-    // if (Object.keys(peers[user.room].participants).length === 0) {
-    //   delete peers[user.room];
+    // If no participants left in the room_uuid, delete the room_uuid
+    // if (Object.keys(peers[body.room_uuid].participants).length === 0) {
+    //   delete peers[body.room_uuid];
     // }
   };
 
   return response;
 };
 
-function generateToken(body: any): string {
-  return base64Encode(JSON.stringify(body));
-}
-
-function validateRoomAndUser({
-  room,
-  user_uuid,
-}: {
-  room: string;
-  user_uuid: string;
-}): void {
-  if (!room || !user_uuid) {
-    throw new HttpError(
-      400,
-      "Room name or user identifier is missing from request body"
-    );
-  }
-}
-
-// Helper function to check if a room exists
-const doesRoomExist = (room: string): boolean => !!peers[room];
-
-// Helper function to check if a user is a participant in a room
+// Helper function to check if a body is a participant in a room
 
 export const joinRoom: Handler<{
-  body: {
-    room: string;
-    password?: string | undefined;
-    user_uuid: string;
-    user_name: string;
-    videoEnabled: boolean;
-    soundEnabled: boolean;
-    approved: boolean;
-    creator: boolean;
-  };
+  body: BodyProp;
 }> = (rev) => {
   // TODO: DEVELOP
   // if (
@@ -414,7 +413,7 @@ export const joinRoom: Handler<{
 
   const { body } = rev;
   const {
-    room,
+    room_uuid,
     password,
     user_uuid,
     user_name,
@@ -425,14 +424,14 @@ export const joinRoom: Handler<{
   } = body;
   console.log("🚀 ~ file: ws.ts:395 ~ body:", body);
   validateRoomAndUser(body);
-  ensureRoomExists(room);
+  ensureRoomExists(room_uuid);
 
-  if (!doesRoomExist(room)) {
-    throw new HttpError(404, `Room ${room} not found`);
+  if (!doesRoomExist(room_uuid)) {
+    throw new HttpError(404, `RoomProp ${room_uuid} not found`);
   }
 
-  if (!peers[room].participants[user_uuid]) {
-    peers[room].participants[user_uuid] = {
+  if (!peers[room_uuid].participants[user_uuid]) {
+    peers[room_uuid].participants[user_uuid] = {
       socket: null,
       status: "offline",
       sessions: [],
@@ -442,28 +441,30 @@ export const joinRoom: Handler<{
       soundEnabled: Boolean(soundEnabled),
       approved: Boolean(approved),
       creator: Boolean(creator),
+      camTimeline: [],
+      faceTimeline: [],
     };
   }
 
-  peers[room].participants[user_uuid].uuid = user_uuid;
-  peers[room].participants[user_uuid].videoEnabled = Boolean(videoEnabled);
+  peers[room_uuid].participants[user_uuid].uuid = user_uuid;
+  peers[room_uuid].participants[user_uuid].videoEnabled = Boolean(videoEnabled);
 
-  if (Object.keys(peers[room].participants).length >= MAX_USER) {
-    throw new HttpError(400, `Room ${room} full`);
+  if (Object.keys(peers[room_uuid].participants).length >= MAX_USER) {
+    throw new HttpError(400, `RoomProp ${room_uuid} full`);
   }
 
   // TODO: DEVELOP
-  if (rev.headers.get("host").startsWith("localhost") || true) {
-    if (!peers[room].password && password) {
-      peers[room].password = password;
+  if (rev.headers.get("host")?.startsWith("localhost") || true) {
+    if (!peers[room_uuid].password && password) {
+      peers[room_uuid].password = password;
     }
   }
 
-  if (peers[room].password && peers[room].password !== password) {
+  if (peers[room_uuid].password && peers[room_uuid].password !== password) {
     throw new HttpError(401, "Wrong password");
   }
 
-  updateRoomActivity(room);
+  updateRoomActivity(room_uuid);
 
   const token = generateToken(body);
   const host = rev.headers.get("host");
@@ -471,10 +472,10 @@ export const joinRoom: Handler<{
   return { token, host };
 };
 
-export const createRoom: Handler<{ body: User }> = ({ body }) => {
+export const createRoom: Handler<{ body: BodyProp }> = ({ body }) => {
   const {
     user_uuid,
-    room,
+    room_uuid,
     password,
     videoEnabled,
     soundEnabled,
@@ -486,17 +487,27 @@ export const createRoom: Handler<{ body: User }> = ({ body }) => {
 
   validateRoomAndUser(body);
 
-  if (doesRoomExist(room)) {
-    throw new HttpError(409, `Room ${room} already exists`);
+  if (doesRoomExist(room_uuid)) {
+    throw new HttpError(409, `RoomProp ${room_uuid} already exists`);
   }
 
-  peers[room] = {
+  peers[room_uuid] = {
+    uuid: room_uuid,
+    name: body.room_name,
     creator: user_uuid,
     participants: {
       [user_uuid]: {
         socket: null,
         status: "offline",
         sessions: [],
+        uuid: user_uuid,
+        name: body.user_name,
+        approved: true,
+        creator: true,
+        camTimeline: [],
+        faceTimeline: [],
+        videoEnabled: videoEnabled || false,
+        soundEnabled: soundEnabled || false,
       },
     },
     chats: [],
@@ -516,14 +527,9 @@ export const createRoom: Handler<{ body: User }> = ({ body }) => {
   return { token: generateToken(body) };
 };
 
-export const wsLogin: Handler<{ body: User }> = async (rev, _next) => {
+export const wsLogin: Handler<{ body: BodyProp }> = async (rev, _next) => {
   const { body } = rev;
-  const { room } = body;
-  if (doesRoomExist(room)) {
-    return await joinRoom(rev, _next);
-  } else {
-    return await createRoom(rev, _next);
-  }
+  const { room_uuid, room_name, user_uuid, user_name, password, approved, is_creator, video_enabled, sound_enabled, participant_timeline_enabled,  } = body;
 };
 
 export const getPeers = () => {
@@ -536,7 +542,7 @@ export const resetPeers = () => {
 };
 
 export const getRoom: Handler = (rev) => {
-  return peers[rev.params.room] ?? {};
+  return peers[rev.params.room_uuid] ?? {};
 };
 
 export const wsHandlers: Handler[] = [middleware, handler];
