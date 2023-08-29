@@ -41,7 +41,7 @@ export const joinOrCreateRoom: Handler<{
       participants: {
         [body.user_uuid]: {
           socket: null,
-          status: "offline",
+          status: Boolean(body.lobby_enabled) ? "in_lobby" : "in_room",
           uuid: body.user_uuid,
           name: body.user_name,
           approved: true,
@@ -78,7 +78,7 @@ export const joinOrCreateRoom: Handler<{
         video_enabled: Boolean(body.video_enabled),
         audio_enabled: Boolean(body.audio_enabled),
         socket: null,
-        status: "offline",
+        status: Boolean(body.lobby_enabled) ? "in_lobby" : "in_room",
         created_at: Date.now(),
         timelines: [],
         cam_timelines: [],
