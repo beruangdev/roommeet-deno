@@ -31,6 +31,7 @@ const handler: Handler = (rev) => {
           room_uuid: body.room_uuid,
           user_uuid: body.user_uuid,
           ...room,
+          my: peerStore.getParticipant(body.room_uuid, body.user_uuid),
         },
       });
 
