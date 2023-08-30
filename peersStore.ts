@@ -26,15 +26,18 @@ class PeerStore {
   }
 
   getPeers(): Record<string, RoomProp> {
+    this.log(`Mengambil semua peers`);
     return this.peers;
   }
 
   resetPeers(): Record<string, RoomProp> {
+    this.log(`Reset semua peers`);
     this.peers = {};
     return this.peers;
   }
 
   cleanupRooms(): void {
+    this.log(`RUN: Menghapus room yang tidak aktif`);
     const currentTimestamp = Date.now();
     const day = 24 * 60 * 60 * 1000;
     for (const room_uuid in this.peers) {
