@@ -14,7 +14,7 @@ const peerStore = PeerStore.getInstance();
 
 export const joinOrCreateRoom: Handler<{
   body: BodyProp;
-}> = (rev) => {
+}> = async (rev) => {
   const { body } = rev;
   console.log("🚀 ~ file: room.controller.ts:19 ~ body:", body);
   validateBody(body);
@@ -25,7 +25,7 @@ export const joinOrCreateRoom: Handler<{
 
   // jika room tidak ada buatkan room baru
   if (!room) {
-    room = peerStore.addRoom(body.room_uuid, {
+    room = await peerStore.addRoom(body.room_uuid, {
       uuid: body.room_uuid,
       name: body.room_name,
       creator_uuid: body.creator_uuid,
@@ -67,35 +67,28 @@ export const joinOrCreateRoom: Handler<{
   room = peerStore.getRoom(body.room_uuid);
   console.log("room after create", room);
 
-  let participant = peerStore.getParticipant(
-    body.room_uuid,
-    body.user_uuid,
-  );
-
+  let participant = peerStore.getParticipant(body.room_uuid, body.user_uuid);
   if (!participant) {
-    participant = peerStore.addParticipant(
-      body.room_uuid,
-      {
-        uuid: body.user_uuid,
-        name: body.user_name,
-        approved: true,
-        is_creator: false,
-        video_enabled: Boolean(body.video_enabled),
-        audio_enabled: Boolean(body.audio_enabled),
-        socket: null,
-        status: body.lobby_enabled ? "in_lobby" : "in_room",
-        created_at: Date.now(),
-        timelines: [],
-        cam_timelines: [],
-        face_timelines: [],
-      },
-    );
+    participant = peerStore.addParticipant(body.room_uuid, {
+      uuid: body.user_uuid,
+      name: body.user_name,
+      approved: true,
+      is_creator: false,
+      video_enabled: Boolean(body.video_enabled),
+      audio_enabled: Boolean(body.audio_enabled),
+      socket: null,
+      status: body.lobby_enabled ? "in_lobby" : "in_room",
+      created_at: Date.now(),
+      timelines: [],
+      cam_timelines: [],
+      face_timelines: [],
+    });
   }
 
   if (room && Object.keys(room.participants).length >= MAX_USER) {
     throw new HttpError(
       400,
-      `RoomProp [${body.room_uuid}] ${body.room_name} full`,
+      `RoomProp [${body.room_uuid}] ${body.room_name} full`
     );
   }
 

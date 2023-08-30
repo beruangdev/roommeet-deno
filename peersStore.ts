@@ -48,7 +48,7 @@ class PeerStore {
       ) {
         this.removeRoom(room_uuid);
         this.log(
-          `Room dengan kunci ${room_uuid} dihapus karena tidak aktif selama ${this.maxRoomNotActive} hari`,
+          `Room dengan kunci ${room_uuid} dihapus karena tidak aktif selama ${this.maxRoomNotActive} hari`
         );
         continue;
       }
@@ -59,7 +59,7 @@ class PeerStore {
       ) {
         this.removeRoom(room_uuid);
         this.log(
-          `Room dengan kunci ${room_uuid} dihapus karena telah dibuat sejak ${this.maxRoomLife} hari yang lalu`,
+          `Room dengan kunci ${room_uuid} dihapus karena telah dibuat sejak ${this.maxRoomLife} hari yang lalu`
         );
       }
     }
@@ -68,24 +68,26 @@ class PeerStore {
   addRoom(room_uuid: string, room: RoomProp): RoomProp {
     this.log(`Menambahkan room dengan kunci ${room_uuid}`);
     const now = Date.now();
-    this.peers = {
-      ...this.peers,
-      [room_uuid]: { ...room, created_at: now, updated_at: now },
-    };
+    // this.peers = {
+    //   ...this.peers,
+    //   [room_uuid]: { ...room, created_at: now, updated_at: now },
+    // };
+    this.peers[room_uuid] = room;
     return this.peers[room_uuid];
   }
 
   updateRoom(room_uuid: string, updatedRoom: Partial<RoomProp>): RoomProp {
     if (this.peers[room_uuid]) {
       this.log(`Memperbarui room dengan kunci ${room_uuid}`);
-      this.peers = {
-        ...this.peers,
-        [room_uuid]: {
-          ...this.peers[room_uuid],
-          ...updatedRoom,
-          updated_at: Date.now(),
-        },
-      };
+      // this.peers = {
+      //   ...this.peers,
+      //   [room_uuid]: {
+      //     ...this.peers[room_uuid],
+      //     ...updatedRoom,
+      //     updated_at: Date.now(),
+      //   },
+      // };
+      this.peers[room_uuid] = { ...this.peers[room_uuid], ...updatedRoom };
     } else {
       throw new Error("Room tidak ditemukan");
     }
@@ -107,7 +109,7 @@ class PeerStore {
 
   getParticipant(
     room_uuid: string,
-    participant_uuid: string,
+    participant_uuid: string
   ): ParticipantProp | undefined {
     this.log(`Mengambil participant dari room ${room_uuid}`);
     return this.peers[room_uuid]?.participants[participant_uuid];
@@ -115,25 +117,26 @@ class PeerStore {
 
   addParticipant(
     room_uuid: string,
-    participant: ParticipantProp,
+    participant: ParticipantProp
   ): ParticipantProp {
     if (this.peers[room_uuid]) {
       this.log(`Menambahkan participant pada room ${room_uuid}`);
       const now = Date.now();
-      this.peers = {
-        ...this.peers,
-        [room_uuid]: {
-          ...this.peers[room_uuid],
-          participants: {
-            ...this.peers[room_uuid].participants,
-            [participant.uuid]: {
-              ...participant,
-              created_at: now,
-              updated_at: now,
-            },
-          },
-        },
-      };
+      // this.peers = {
+      //   ...this.peers,
+      //   [room_uuid]: {
+      //     ...this.peers[room_uuid],
+      //     participants: {
+      //       ...this.peers[room_uuid].participants,
+      //       [participant.uuid]: {
+      //         ...participant,
+      //         created_at: now,
+      //         updated_at: now,
+      //       },
+      //     },
+      //   },
+      // };
+      this.peers[room_uuid].participants[participant.uuid] = participant;
     } else {
       throw new Error("Room tidak ditemukan");
     }
@@ -144,24 +147,28 @@ class PeerStore {
   updateParticipant(
     room_uuid: string,
     participant_uuid: string,
-    updatedParticipant: Partial<ParticipantProp>,
+    updatedParticipant: Partial<ParticipantProp>
   ): ParticipantProp {
     if (this.peers[room_uuid]?.participants[participant_uuid]) {
       this.log(`Memperbarui participant pada room ${room_uuid}`);
-      const updatedParticipants = {
-        ...this.peers[room_uuid].participants,
-        [participant_uuid]: {
-          ...this.peers[room_uuid].participants[participant_uuid],
-          ...updatedParticipant,
-          updated_at: Date.now(),
-        },
-      };
-      this.peers = {
-        ...this.peers,
-        [room_uuid]: {
-          ...this.peers[room_uuid],
-          participants: updatedParticipants,
-        },
+      // const updatedParticipants = {
+      //   ...this.peers[room_uuid].participants,
+      //   [participant_uuid]: {
+      //     ...this.peers[room_uuid].participants[participant_uuid],
+      //     ...updatedParticipant,
+      //     updated_at: Date.now(),
+      //   },
+      // };
+      // this.peers = {
+      //   ...this.peers,
+      //   [room_uuid]: {
+      //     ...this.peers[room_uuid],
+      //     participants: updatedParticipants,
+      //   },
+      // };
+      this.peers[room_uuid].participants[participant_uuid] = {
+        ...this.peers[room_uuid].participants[participant_uuid],
+        ...updatedParticipant,
       };
     } else {
       throw new Error("Room atau participant tidak ditemukan");
