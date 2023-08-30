@@ -23,7 +23,7 @@ export type TokenDataProp = {
 }
 
 export type WsMessageProp =
-  | { type: "opening"; data: { room_uuid: string; user_uuid: string, my: ParticipantProp | undefined } }
+  | { type: "opening"; data: { room_uuid: string; user_uuid: string, myy: ParticipantProp | undefined } }
   | { type: "initReceive"; data: { user_uuid: string } }
   | { type: "initSend"; data: { user_uuid: string } }
   | { type: "signal"; data: { user_uuid: string; signal: unknown } }
