@@ -1,6 +1,6 @@
 import {
   BodyProp,
-  ParticipantProp,
+  // ParticipantProp,
   TokenDataProp,
   WsMessageProp,
 } from "./data-types.ts";
@@ -108,19 +108,19 @@ export const tryDecode = (str: string): TokenDataProp => {
 /*
 Untuk menghitung total waktu yang dihabiskan oleh pengguna, Anda dapat menambahkan seluruh durasi dari semua sesi:
 */
-export function getTotalTime(participant: ParticipantProp): number {
-  return participant.timelines.reduce((total, timeline) => {
-    const end = timeline.end_at || Date.now(); // Jika sesi belum berakhir, gunakan waktu saat ini
-    return total + (end - timeline.start_at);
-  }, 0);
-}
+// export function getTotalTime(participant: ParticipantProp): number {
+//   return participant.timelines.reduce((total, timeline) => {
+//     const end = timeline.end_at || Date.now(); // Jika sesi belum berakhir, gunakan waktu saat ini
+//     return total + (end - timeline.start_at);
+//   }, 0);
+// }
 
 // Anda juga dapat membuat fungsi untuk mendapatkan timeline dari sesi pengguna:
-export function _getTimeline(
-  participant: ParticipantProp,
-): { start_at: number; end_at?: number }[] {
-  return participant.timelines.map((timeline) => ({
-    start_at: timeline.start_at,
-    end_at: timeline.end_at || Date.now(),
-  }));
-}
+// export function _getTimeline(
+//   participant: ParticipantProp,
+// ): { start_at: number; end_at?: number }[] {
+//   return participant.timelines.map((timeline) => ({
+//     start_at: timeline.start_at,
+//     end_at: timeline.end_at || Date.now(),
+//   }));
+// }

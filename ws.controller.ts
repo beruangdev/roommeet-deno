@@ -36,7 +36,7 @@ const handler: Handler = (rev) => {
 
       const participant = peerStore.getParticipant(
         body.room_uuid,
-        body.user_uuid
+        body.user_uuid,
       );
       if (participant) {
         participant.socket = socket;
@@ -45,7 +45,7 @@ const handler: Handler = (rev) => {
         peerStore.updateParticipant(
           body.room_uuid,
           participant.uuid,
-          participant
+          participant,
         );
       }
 
@@ -75,7 +75,7 @@ const handler: Handler = (rev) => {
       }
       const participant = peerStore.getParticipant(
         body.room_uuid,
-        data.user_uuid
+        data.user_uuid,
       );
       const room = peerStore.getRoom(body.room_uuid);
 
@@ -149,11 +149,17 @@ const handler: Handler = (rev) => {
 
     const participant = peerStore.getParticipant(
       body.room_uuid,
-      body.user_uuid
+      body.user_uuid,
     );
     if (participant) {
-      participant.timelines[participant.timelines.length - 1].end_at =
-        Date.now();
+      if (
+        !participant.timelines || !Array.isArray(participant.timelines) ||
+        participant.timelines.length === 0
+      ) {
+        participant.timelines = [{ start_at: Date.now() }];
+      }
+      participant.timelines[participant.timelines.length - 1].end_at = Date
+        .now();
       peerStore.updateParticipant(body.room_uuid, participant.uuid, {
         status: "left",
         timelines: participant.timelines,
