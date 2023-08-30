@@ -21,6 +21,8 @@ export const joinOrCreateRoom: Handler<{
   updateRoomActivity(body.room_uuid);
 
   let room = peerStore.getRoom(body.room_uuid);
+  console.log("room before create", room);
+  
   // jika room tidak ada buatkan room baru
   if (!room) {
     room = peerStore.addRoom(body.room_uuid, {
@@ -41,7 +43,7 @@ export const joinOrCreateRoom: Handler<{
       participants: {
         [body.user_uuid]: {
           socket: null,
-          status: Boolean(body.lobby_enabled) ? "in_lobby" : "in_room",
+          status: body.lobby_enabled ? "in_lobby" : "in_room",
           uuid: body.user_uuid,
           name: body.user_name,
           approved: true,
@@ -61,6 +63,7 @@ export const joinOrCreateRoom: Handler<{
       last_active_at: Date.now(),
     });
   }
+  console.log("room after create", room);
 
   let participant = peerStore.getParticipant(
     body.room_uuid,
@@ -78,7 +81,7 @@ export const joinOrCreateRoom: Handler<{
         video_enabled: Boolean(body.video_enabled),
         audio_enabled: Boolean(body.audio_enabled),
         socket: null,
-        status: Boolean(body.lobby_enabled) ? "in_lobby" : "in_room",
+        status: body.lobby_enabled ? "in_lobby" : "in_room",
         created_at: Date.now(),
         timelines: [],
         cam_timelines: [],
@@ -87,7 +90,6 @@ export const joinOrCreateRoom: Handler<{
     );
   }
 
-  room = peerStore.getRoom(body.room_uuid);
   if (room && Object.keys(room.participants).length >= MAX_USER) {
     throw new HttpError(
       400,
