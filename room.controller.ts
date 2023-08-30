@@ -21,7 +21,6 @@ export const joinOrCreateRoom: Handler<{
   updateRoomActivity(body.room_uuid);
 
   let room = peerStore.getRoom(body.room_uuid);
-  console.log("room before create", room);
 
   // jika room tidak ada buatkan room baru
   if (!room) {
@@ -65,7 +64,6 @@ export const joinOrCreateRoom: Handler<{
   }
 
   room = peerStore.getRoom(body.room_uuid);
-  console.log("room after create", room);
 
   let participant = peerStore.getParticipant(body.room_uuid, body.user_uuid);
   if (!participant) {
