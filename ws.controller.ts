@@ -36,7 +36,7 @@ const handler: Handler = (rev) => {
 
       const participant = peerStore.getParticipant(
         body.room_uuid,
-        body.user_uuid,
+        body.user_uuid
       );
       if (participant) {
         participant.socket = socket;
@@ -45,7 +45,7 @@ const handler: Handler = (rev) => {
         peerStore.updateParticipant(
           body.room_uuid,
           participant.uuid,
-          participant,
+          participant
         );
       }
 
@@ -75,7 +75,7 @@ const handler: Handler = (rev) => {
       }
       const participant = peerStore.getParticipant(
         body.room_uuid,
-        data.user_uuid,
+        data.user_uuid
       );
       const room = peerStore.getRoom(body.room_uuid);
 
@@ -104,12 +104,12 @@ const handler: Handler = (rev) => {
           break;
 
         case "chat":
-          if (room) {
-            room.chats.push({
-              user_uuid: body.user_uuid,
-              message: data.message,
-            });
-          }
+          room?.chats.push({
+            user_uuid: body.user_uuid,
+            message: data.message,
+          });
+          peerStore.updateRoom(body.room_uuid, { chats: room?.chats });
+
           broadcastToOthers(body.room_uuid, body.user_uuid, {
             type: "chat",
             data: { user_uuid: body.user_uuid, message: data.message },
@@ -117,6 +117,9 @@ const handler: Handler = (rev) => {
           break;
 
         case "toggleVideo":
+          peerStore.updateParticipant(body.room_uuid, data.user_uuid, {
+            video_enabled: data.video_enabled,
+          });
           broadcastToOthers(body.room_uuid, body.user_uuid, {
             type: "toggleVideo",
             data: {
@@ -127,6 +130,9 @@ const handler: Handler = (rev) => {
           break;
 
         case "toggleAudio":
+          peerStore.updateParticipant(body.room_uuid, data.user_uuid, {
+            audio_enabled: data.audio_enabled,
+          });
           broadcastToOthers(body.room_uuid, body.user_uuid, {
             type: "toggleAudio",
             data: {
@@ -149,11 +155,11 @@ const handler: Handler = (rev) => {
 
     const participant = peerStore.getParticipant(
       body.room_uuid,
-      body.user_uuid,
+      body.user_uuid
     );
     if (participant) {
-      participant.timelines[participant.timelines.length - 1].end_at = Date
-        .now();
+      participant.timelines[participant.timelines.length - 1].end_at =
+        Date.now();
       peerStore.updateParticipant(body.room_uuid, participant.uuid, {
         status: "left",
         timelines: participant.timelines,
