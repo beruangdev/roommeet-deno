@@ -63,6 +63,8 @@ export const joinOrCreateRoom: Handler<{
       last_active_at: Date.now(),
     });
   }
+
+  room = peerStore.getRoom(body.room_uuid);
   console.log("room after create", room);
 
   let participant = peerStore.getParticipant(
