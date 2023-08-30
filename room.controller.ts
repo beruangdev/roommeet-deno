@@ -22,7 +22,7 @@ export const joinOrCreateRoom: Handler<{
 
   let room = peerStore.getRoom(body.room_uuid);
   console.log("room before create", room);
-  
+
   // jika room tidak ada buatkan room baru
   if (!room) {
     room = peerStore.addRoom(body.room_uuid, {
@@ -51,7 +51,7 @@ export const joinOrCreateRoom: Handler<{
           video_enabled: body.video_enabled || false,
           audio_enabled: body.audio_enabled || false,
 
-          timelines: [],
+          timelines: [{ start_at: Date.now() }],
           cam_timelines: [],
           face_timelines: [],
           created_at: Date.now(),
@@ -83,7 +83,7 @@ export const joinOrCreateRoom: Handler<{
         socket: null,
         status: body.lobby_enabled ? "in_lobby" : "in_room",
         created_at: Date.now(),
-        timelines: [],
+        timelines: [{ start_at: Date.now() }],
         cam_timelines: [],
         face_timelines: [],
       },
