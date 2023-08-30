@@ -83,7 +83,7 @@ export const joinOrCreateRoom: Handler<{
         socket: null,
         status: body.lobby_enabled ? "in_lobby" : "in_room",
         created_at: Date.now(),
-        timelines: [{ start_at: Date.now() }],
+        timelines: [],
         cam_timelines: [],
         face_timelines: [],
       },

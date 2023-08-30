@@ -152,12 +152,6 @@ const handler: Handler = (rev) => {
       body.user_uuid,
     );
     if (participant) {
-      if (
-        !participant.timelines || !Array.isArray(participant.timelines) ||
-        participant.timelines.length === 0
-      ) {
-        participant.timelines = [{ start_at: Date.now() }];
-      }
       participant.timelines[participant.timelines.length - 1].end_at = Date
         .now();
       peerStore.updateParticipant(body.room_uuid, participant.uuid, {
