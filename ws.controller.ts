@@ -127,7 +127,9 @@ const handler: Handler = (rev) => {
             audio_enabled: data.audio_enabled,
           },
         });
-      } else if (type === "resumePeerStream") {
+      } else {
+      /*
+      else if (type === "resumePeerStream") {
         const senderParticipant = peerStore.getParticipant(
           body.room_uuid,
           data.sender_uuid
@@ -149,7 +151,8 @@ const handler: Handler = (rev) => {
             sender_uuid: data.sender_uuid,
           },
         });
-      } else {
+      }
+      */
         console.warn("Unhandled message type:", type);
       }
     } catch (error) {
