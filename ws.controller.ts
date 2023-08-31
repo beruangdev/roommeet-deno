@@ -40,7 +40,7 @@ const handler: Handler = (rev) => {
         body.user_uuid
       );
       if (participant) {
-        participant.socket = socket;
+        participant.socket = socket as WebSocket;
         participant.status = "in_room";
         participant.timelines.push({ start_at: Date.now() });
         peerStore.updateParticipant(
@@ -68,90 +68,101 @@ const handler: Handler = (rev) => {
   };
 
   //  TODO Buat dalam class
-  socket.onmessage = (e) => {
+  socket.onmessage = (event: MessageEvent) => {
     try {
-      const { type, data } = JSON.parse(e.data) as WsMessageProp;
+      const { type, data } = JSON.parse(event.data) as WsMessageProp;
       if (!peerStore.getRoom(body.room_uuid)) {
         throw new HttpError(404, `Room ${body.room_uuid} not found`);
       }
       const participant = peerStore.getParticipant(
         body.room_uuid,
-        data.user_uuid
+        body.user_uuid
       );
       const room = peerStore.getRoom(body.room_uuid);
 
       updateRoomActivity(body.room_uuid);
 
-      switch (type) {
-        case "signal":
-          if (participant) {
-            wsSend(participant.socket as WebSocket, {
-              type: "signal",
-              data: { user_uuid: body.user_uuid, signal: data.signal },
-            });
-          }
-          break;
-
-        case "initSend":
-          if (participant) {
-            wsSend(participant.socket as WebSocket, {
-              type: "initSend",
-              data: {
-                user_uuid: body.user_uuid,
-                ...peerStore.getParticipant(body.room_uuid, body.user_uuid),
-              },
-            });
-          }
-          break;
-
-        case "chat":
-          room?.chats.push({
+      if (type === "signal" && participant) {
+        wsSend(participant.socket as WebSocket, {
+          type: "signal",
+          data: { user_uuid: body.user_uuid, signal: data.signal },
+        });
+      } else if (type === "initSend" && participant) {
+        wsSend(participant.socket as WebSocket, {
+          type: "initSend",
+          data: {
             user_uuid: body.user_uuid,
-            message: data.message,
-          });
-          peerStore.updateRoom(body.room_uuid, { chats: room?.chats });
-
-          broadcastToOthers(body.room_uuid, body.user_uuid, {
-            type: "chat",
-            data: { user_uuid: body.user_uuid, message: data.message },
-          });
-          break;
-
-        case "toggleVideo":
-          peerStore.updateParticipant(body.room_uuid, data.user_uuid, {
+            ...peerStore.getParticipant(body.room_uuid, body.user_uuid),
+          },
+        });
+      } else if (type === "chat") {
+        room?.chats.push({
+          user_uuid: body.user_uuid,
+          message: data.message,
+        });
+        peerStore.updateRoom(body.room_uuid, { chats: room?.chats });
+        broadcastToOthers(body.room_uuid, body.user_uuid, {
+          type: "chat",
+          data: { user_uuid: body.user_uuid, message: data.message },
+        });
+      } else if (type === "toggleVideo") {
+        peerStore.updateParticipant(body.room_uuid, data.user_uuid, {
+          video_enabled: data.video_enabled,
+        });
+        broadcastToOthers(body.room_uuid, body.user_uuid, {
+          type: "toggleVideo",
+          data: {
+            user_uuid: data.user_uuid,
             video_enabled: data.video_enabled,
-          });
-          broadcastToOthers(body.room_uuid, body.user_uuid, {
-            type: "toggleVideo",
-            data: {
-              user_uuid: data.user_uuid,
-              video_enabled: data.video_enabled,
-            },
-          });
-          break;
-
-        case "toggleAudio":
-          peerStore.updateParticipant(body.room_uuid, data.user_uuid, {
+          },
+        });
+      } else if (type === "toggleAudio") {
+        peerStore.updateParticipant(body.room_uuid, data.user_uuid, {
+          audio_enabled: data.audio_enabled,
+        });
+        broadcastToOthers(body.room_uuid, body.user_uuid, {
+          type: "toggleAudio",
+          data: {
+            user_uuid: data.user_uuid,
             audio_enabled: data.audio_enabled,
-          });
-          broadcastToOthers(body.room_uuid, body.user_uuid, {
-            type: "toggleAudio",
-            data: {
-              user_uuid: data.user_uuid,
-              audio_enabled: data.audio_enabled,
-            },
-          });
-          break;
-
-        default:
-          console.warn("Unhandled message type:", type);
+          },
+        });
+      } else if (type === "resumePeerStream") {
+        const senderParticipant = peerStore.getParticipant(
+          body.room_uuid,
+          data.sender_uuid
+        );
+        wsSend(senderParticipant?.socket as WebSocket, {
+          type: "resumePeerStream",
+          data: {
+            sender_uuid: data.sender_uuid,
+          },
+        });
+      } else if (type === "pausePeerStream") {
+        const senderParticipant = peerStore.getParticipant(
+          body.room_uuid,
+          data.sender_uuid
+        );
+        wsSend(senderParticipant?.socket as WebSocket, {
+          type: "pausePeerStream",
+          data: {
+            sender_uuid: data.sender_uuid,
+          },
+        });
+      } else {
+        console.warn("Unhandled message type:", type);
       }
     } catch (error) {
       console.error("Error handling message:", error);
     }
   };
 
-  socket.onclose = () => {
+  socket.onclose = (event: CloseEvent) => {
+    console.log(
+      `Socket close. Code: ${event.code} - was clean ${event.wasClean}`
+    );
+    console.log(`reason: ${event.reason}`);
+
     if (!peerStore.getRoom(body.room_uuid)) return;
 
     const participant = peerStore.getParticipant(
@@ -178,8 +189,17 @@ const handler: Handler = (rev) => {
     // jika participant yang aktif kosong
     // if (Object.keys(peers[body.room_uuid].participants).length === 0) {
     // TODO: update data ended_at di database
+    // broadcastToOthers(body.room_uuid, body.user_uuid, {
+    //   type: "closeRoom",
+    //   data: {},
+    // });
     //    peerStore.removeRoom(body.room_uuid);
     // }
+  };
+
+  socket.onerror = (event: ErrorEvent) => {
+    console.log(`WS Error: ${event.error}`);
+    console.log(`WS Error message: ${event.message}`);
   };
 
   return response;

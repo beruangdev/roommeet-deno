@@ -20,10 +20,17 @@ export type TokenDataProp = {
   room_uuid: string;
   user_uuid: string;
   password?: string | undefined;
-}
+};
 
 export type WsMessageProp =
-  | { type: "opening"; data: { room_uuid: string; user_uuid: string, myy: ParticipantProp | undefined } }
+  | {
+      type: "opening";
+      data: {
+        room_uuid: string;
+        user_uuid: string;
+        myy: ParticipantProp | undefined;
+      };
+    }
   | { type: "initReceive"; data: { user_uuid: string } }
   | { type: "initSend"; data: { user_uuid: string } }
   | { type: "signal"; data: { user_uuid: string; signal: unknown } }
@@ -33,6 +40,14 @@ export type WsMessageProp =
     }
   | { type: "toggleVideo"; data: { user_uuid: string; video_enabled: boolean } }
   | { type: "toggleAudio"; data: { user_uuid: string; audio_enabled: boolean } }
+  | {
+      type: "resumePeerStream";
+      data: { sender_uuid: string; };
+    }
+  | {
+      type: "pausePeerStream";
+      data: { sender_uuid: string; };
+    }
   | { type: "errorToken"; data: Record<string | number | symbol, never> }
   | { type: "errorPassword"; data: Record<string | number | symbol, never> }
   | { type: "full"; data: Record<string | number | symbol, never> }
@@ -54,7 +69,7 @@ export type RoomProp = {
 
   participants: Record<string, ParticipantProp>;
   chats: { user_uuid: string; message: string }[];
-  
+
   last_active_at: number;
   updated_at?: number;
   created_at: number;
