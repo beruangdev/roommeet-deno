@@ -1,6 +1,6 @@
 // rafactor kode fungsi handler, dan tulis dengan lengkap !!!
 // ws.controller.ts
-import { TokenDataProp, WsMessageProp } from "./data-types.ts";
+import { ParticipantProp, TokenDataProp, WsMessageProp } from "./data-types.ts";
 import { Handler, HttpError } from "./deps.ts";
 import PeerStore from "./peersStore.ts";
 
@@ -82,6 +82,8 @@ const handler: Handler = (rev) => {
 
       updateRoomActivity(body.room_uuid);
 
+      let sender: ParticipantProp | undefined;
+
       switch (type) {
         case "signal":
           if (participant) {
@@ -141,6 +143,26 @@ const handler: Handler = (rev) => {
               audio_enabled: data.audio_enabled,
             },
           });
+          break;
+
+        case "resumePeerStream":
+          sender = peerStore.getParticipant(body.room_uuid, data.sender_uuid);
+          if (sender) {
+            wsSend(sender.socket as WebSocket, {
+              type: "resumePeerStream",
+              data: { sender_uuid: data.sender_uuid },
+            });
+          }
+          break;
+
+        case "pausePeerStream":
+          sender = peerStore.getParticipant(body.room_uuid, data.sender_uuid);
+          if (sender) {
+            wsSend(sender.socket as WebSocket, {
+              type: "pausePeerStream",
+              data: { sender_uuid: data.sender_uuid },
+            });
+          }
           break;
 
         default:
