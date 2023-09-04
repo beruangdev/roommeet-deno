@@ -19,12 +19,24 @@ const handler: Handler = (rev) => {
   const body = rev.body as TokenDataProp;
   const { socket, response } = Deno.upgradeWebSocket(request);
 
+  let room = peerStore.getRoom(body.room_uuid);
+  let participant = peerStore.getParticipant(body.room_uuid, body.user_uuid);
   socket.onopen = () => {
     try {
       updateRoomActivity(body.room_uuid);
       validateRoomAccess(body, socket);
 
-      const room = peerStore.getRoom(body.room_uuid);
+      if (participant) {
+        participant.socket = socket;
+        participant.status = "in_room";
+        participant.timelines.push({ start_at: Date.now() });
+        participant = peerStore.updateParticipant(
+          body.room_uuid,
+          participant.uuid,
+          participant
+        );
+      }
+      
       wsSend(socket, {
         type: "opening",
         data: {
@@ -35,20 +47,7 @@ const handler: Handler = (rev) => {
         },
       });
 
-      const participant = peerStore.getParticipant(
-        body.room_uuid,
-        body.user_uuid
-      );
-      if (participant) {
-        participant.socket = socket;
-        participant.status = "in_room";
-        participant.timelines.push({ start_at: Date.now() });
-        peerStore.updateParticipant(
-          body.room_uuid,
-          participant.uuid,
-          participant
-        );
-      }
+
 
       broadcastToOthers(body.room_uuid, body.user_uuid, {
         type: "initReceive",
@@ -67,106 +66,94 @@ const handler: Handler = (rev) => {
     }
   };
 
-  //  TODO Buat dalam class
-  socket.onmessage = (e) => {
+  socket.onmessage = (event) => {
     try {
-      const { type, data } = JSON.parse(e.data) as WsMessageProp;
+      const { type, data } = JSON.parse(event.data) as WsMessageProp;
+
       if (!peerStore.getRoom(body.room_uuid)) {
         throw new HttpError(404, `Room ${body.room_uuid} not found`);
       }
-      const participant = peerStore.getParticipant(
-        body.room_uuid,
-        data.user_uuid
-      );
+
       const room = peerStore.getRoom(body.room_uuid);
 
       updateRoomActivity(body.room_uuid);
 
-      let sender: ParticipantProp | undefined;
-
-      switch (type) {
-        case "signal":
-          if (participant) {
-            wsSend(participant.socket as WebSocket, {
-              type: "signal",
-              data: { user_uuid: body.user_uuid, signal: data.signal },
-            });
-          }
-          break;
-
-        case "initSend":
-          if (participant) {
-            wsSend(participant.socket as WebSocket, {
-              type: "initSend",
+      if (type === "signal") {
+        const participant = peerStore.getParticipant(
+          body.room_uuid,
+          data.user_uuid
+        );
+        if (participant) {
+          wsSend(participant.socket as WebSocket, {
+            type: "signal",
+            data: { user_uuid: body.user_uuid, signal: data.signal },
+          });
+        }
+      } else if (type === "initSend") {
+        const participant = peerStore.getParticipant(
+          body.room_uuid,
+          data.user_uuid
+        );
+        if (participant) {
+          wsSend(participant.socket as WebSocket, {
+            type: "initSend",
+            data: {
+              user_uuid: body.user_uuid,
+              ...peerStore.getParticipant(body.room_uuid, body.user_uuid),
+            },
+          });
+        }
+      } else if (type === "chat") {
+        broadcastToOthers(body.room_uuid, body.user_uuid, {
+          type: "chat",
+          data: { user_uuid: body.user_uuid, message: data.message },
+        });
+      } else if (type === "toggleVideo") {
+        const updatedData = { video_enabled: data.video_enabled };
+        participant = peerStore.updateParticipant(
+          body.room_uuid,
+          data.user_uuid,
+          updatedData
+        );
+        broadcastToOthers(body.room_uuid, body.user_uuid, {
+          type: type,
+          data: {
+            user_uuid: data.user_uuid,
+            ...updatedData,
+          },
+        });
+      } else if (type === "toggleAudio") {
+        const updatedData = { audio_enabled: data.audio_enabled };
+        participant = peerStore.updateParticipant(
+          body.room_uuid,
+          data.user_uuid,
+          updatedData
+        );
+        broadcastToOthers(body.room_uuid, body.user_uuid, {
+          type: type,
+          data: {
+            user_uuid: data.user_uuid,
+            ...updatedData,
+          },
+        });
+      } else if (
+        type === "requestResumePeerStream" ||
+        type === "requestPausePeerStream"
+      ) {
+        if (room) {
+          const sender = peerStore.getParticipant(room.uuid, data.sender_uuid);
+          if (sender) {
+            wsSend(sender.socket, {
+              type: type,
               data: {
-                user_uuid: body.user_uuid,
-                ...peerStore.getParticipant(body.room_uuid, body.user_uuid),
+                sender_uuid: data.sender_uuid,
+                receiver_uuid: data.receiver_uuid,
               },
             });
           }
-          break;
-
-        case "chat":
-          room?.chats.push({
-            user_uuid: body.user_uuid,
-            message: data.message,
-          });
-          peerStore.updateRoom(body.room_uuid, { chats: room?.chats });
-
-          broadcastToOthers(body.room_uuid, body.user_uuid, {
-            type: "chat",
-            data: { user_uuid: body.user_uuid, message: data.message },
-          });
-          break;
-
-        case "toggleVideo":
-          peerStore.updateParticipant(body.room_uuid, data.user_uuid, {
-            video_enabled: data.video_enabled,
-          });
-          broadcastToOthers(body.room_uuid, body.user_uuid, {
-            type: "toggleVideo",
-            data: {
-              user_uuid: data.user_uuid,
-              video_enabled: data.video_enabled,
-            },
-          });
-          break;
-
-        case "toggleAudio":
-          peerStore.updateParticipant(body.room_uuid, data.user_uuid, {
-            audio_enabled: data.audio_enabled,
-          });
-          broadcastToOthers(body.room_uuid, body.user_uuid, {
-            type: "toggleAudio",
-            data: {
-              user_uuid: data.user_uuid,
-              audio_enabled: data.audio_enabled,
-            },
-          });
-          break;
-
-        case "resumePeerStream":
-          sender = peerStore.getParticipant(body.room_uuid, data.sender_uuid);
-          if (sender) {
-            wsSend(sender.socket as WebSocket, {
-              type: "resumePeerStream",
-              data: { sender_uuid: data.sender_uuid },
-            });
-          }
-          break;
-
-        case "pausePeerStream":
-          sender = peerStore.getParticipant(body.room_uuid, data.sender_uuid);
-          if (sender) {
-            wsSend(sender.socket as WebSocket, {
-              type: "pausePeerStream",
-              data: { sender_uuid: data.sender_uuid },
-            });
-          }
-          break;
-
-        default:
-          console.warn("Unhandled message type:", type);
+        }
+      } else {
+        console.warn("Unhandled message type:", type);
       }
     } catch (error) {
       console.error("Error handling message:", error);
@@ -176,17 +163,17 @@ const handler: Handler = (rev) => {
   socket.onclose = () => {
     if (!peerStore.getRoom(body.room_uuid)) return;
 
-    const participant = peerStore.getParticipant(
-      body.room_uuid,
-      body.user_uuid
-    );
     if (participant) {
       participant.timelines[participant.timelines.length - 1].end_at =
         Date.now();
-      peerStore.updateParticipant(body.room_uuid, participant.uuid, {
-        status: "left",
-        timelines: participant.timelines,
-      });
+      participant = peerStore.updateParticipant(
+        body.room_uuid,
+        participant.uuid,
+        {
+          status: "left",
+          timelines: participant.timelines,
+        }
+      );
     }
 
     broadcastToOthers(body.room_uuid, body.user_uuid, {

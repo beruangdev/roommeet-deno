@@ -22,15 +22,8 @@ app.engine(renderToHtml);
 
 app.post("/api/join-or-create", joinOrCreateRoom);
 app.get("/peers", getPeers);
-app.post("/test-speed", (rev) => {
-  rev.response.status(200).send({
-    body: rev.body,
-    query: rev.query,
-  });
-});
-app.get("/reset-peers", resetPeers);
+app.get("/peersr", resetPeers);
 app.get("/room/:room", getRoom);
-app.get("/", () => <Home />);
 app.get("/ws/:token", wsHandlers);
 
 app.get("/meet", ({ params }) => <Meet isDev={isDev} />);

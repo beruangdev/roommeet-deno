@@ -19,7 +19,7 @@ export const isEmptyObject = (obj: Record<string, any>): boolean => {
 };
 
 export const updateRoomActivity: (room_uuid: string) => void = (
-  room_uuid: string,
+  room_uuid: string
 ) => {
   const room = peerStore.getRoom(room_uuid);
   if (room) {
@@ -31,17 +31,18 @@ export const updateRoomActivity: (room_uuid: string) => void = (
 export const broadcastToOthers: (
   room_uuid: string,
   user_uuid: string,
-  message: WsMessageProp,
+  message: WsMessageProp
 ) => void = (
   room_uuid: string,
   user_uuid: string,
-  message: WsMessageProp,
+  message: WsMessageProp
 ): void => {
   const room = peerStore.getRoom(room_uuid);
   if (room && room.participants) {
     for (const [peerId, data] of Object.entries(room.participants)) {
       if (
-        peerId !== user_uuid && data.socket &&
+        peerId !== user_uuid &&
+        data.socket &&
         data.socket.readyState === WebSocket.OPEN
       ) {
         wsSend(data.socket, message);
@@ -51,15 +52,15 @@ export const broadcastToOthers: (
 };
 
 export const isValidBody: (body: BodyProp) => boolean = (
-  body: BodyProp,
+  body: BodyProp
 ): boolean => {
   return body.user_uuid && body.room_uuid ? true : false;
 };
 
-export const validateRoomAccess: (body: TokenDataProp, socket: WebSocket) => void = (
+export const validateRoomAccess: (
   body: TokenDataProp,
-  socket: WebSocket,
-) => {
+  socket: WebSocket
+) => void = (body: TokenDataProp, socket: WebSocket) => {
   const room = peerStore.getRoom(body.room_uuid);
   if (room && body.password && body.password !== room.password) {
     wsSend(socket, { type: "errorPassword", data: {} });
@@ -72,13 +73,15 @@ export const validateRoomAccess: (body: TokenDataProp, socket: WebSocket) => voi
   }
 };
 
-export const wsSend = (ws: WebSocket, data: WsMessageProp): void => {
-  ws.send(JSON.stringify(data));
+export const wsSend = (ws: WebSocket | null, data: WsMessageProp): void => {
+  if (ws) {
+    ws.send(JSON.stringify(data));
+  } else {
+    console.error("WEBSOCKET not found", ws);
+  }
 };
 
-export function generateToken(
-  data: TokenDataProp,
-): string {
+export function generateToken(data: TokenDataProp): string {
   return encode(JSON.stringify(data));
 }
 
@@ -92,7 +95,7 @@ export function validateBody({
   if (!room_uuid || !user_uuid) {
     throw new HttpError(
       400,
-      "RoomProp name or body identifier is missing from request body",
+      "RoomProp name or body identifier is missing from request body"
     );
   }
 }

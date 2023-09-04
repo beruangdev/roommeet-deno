@@ -39,9 +39,9 @@ export type WsMessageProp =
       data: { user_uuid: string; status: "in_room" | "in_lobby" | "left" };
     }
   | { type: "toggleVideo"; data: { user_uuid: string; video_enabled: boolean } }
+  | { type: "requestResumePeerStream"; data: { sender_uuid: string; receiver_uuid: string } }
+  | { type: "requestPausePeerStream"; data: { sender_uuid: string; receiver_uuid: string } }
   | { type: "toggleAudio"; data: { user_uuid: string; audio_enabled: boolean } }
-  | { type: "resumePeerStream"; data: { sender_uuid: string } }
-  | { type: "pausePeerStream"; data: { sender_uuid: string } }
   | { type: "errorToken"; data: Record<string | number | symbol, never> }
   | { type: "errorPassword"; data: Record<string | number | symbol, never> }
   | { type: "full"; data: Record<string | number | symbol, never> }
